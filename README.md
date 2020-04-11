@@ -1,2 +1,2 @@
-# DKB_parser
+# DKB-bank-account-parser 
 Parser for DKB-formatted csv files
