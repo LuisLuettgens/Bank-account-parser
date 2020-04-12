@@ -34,9 +34,9 @@ class BankAccount:
         self.bank_account_type = self.meta_data['BA_type']
         self.IBAN              = self.meta_data['IBAN']
         print('done!')
-        self.categories       = ['Groceries', 'Dining', 'Amazon', 'Rent', 'Mobil phone /\n Internet', 'Culture',
+        self.categories        = ['Groceries', 'Dining', 'Amazon', 'Rent', 'Mobil phone /\n Internet', 'Culture',
                                  'Travel', 'Credit card',  'Fuel', 'Insurance', 'EoQ', 'Pharmacy', 'None']
-        
+                
         latest_data_file_compressed_path = self.erase_meta_data()
         self.dfs.append(pd.read_csv(latest_data_file_compressed_path,delimiter=';', encoding ='latin-1'))
         os.remove(latest_data_file_compressed_path)
@@ -50,10 +50,13 @@ class BankAccount:
                 print('done!')
         
         append_ignore_idx = functools.partial(pd.DataFrame.append,ignore_index=True)
+        
         self.data = functools.reduce(append_ignore_idx,self.dfs)
         self.data = valid_table(self.data,self.current_balance)
+        
         self.daily_data = self.data[['Wertstellung','Betrag (EUR)']].groupby('Wertstellung').sum().reset_index()
         self.daily_data = add_balance_col(self.daily_data, self.current_balance)
+        
         print('Updatig daily transactions...\t\t\t\t', end='')
         self.daily_data = self.update_daily()
         print('done!')
@@ -80,18 +83,18 @@ class BankAccount:
     def get_months(self, start_date, end_date, use_daily_table=True, use_Werstellung = True):
         if use_Werstellung:
             if use_daily_table:
-                return self.daily_data[ (self.daily_data['Wertstellung'] >= start_date) &
-                                        (self.daily_data['Wertstellung'] <  end_date)]
+                return self.daily_data[(self.daily_data['Wertstellung'] >= start_date) &
+                                       (self.daily_data['Wertstellung'] <= end_date)]
             else:
                 return self.data[(self.data['Wertstellung'] >= start_date) &
-                                (self.data['Wertstellung'] <  end_date)]
+                                 (self.data['Wertstellung'] <= end_date)]
         else:
             if use_daily_table:
                 return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
-                                       (self.daily_data['Buchungstag'] <  end_date)]
+                                       (self.daily_data['Buchungstag'] <= end_date)]
             else:
                 return self.data[(self.data['Buchungstag'] >= start_date) &
-                            (self.data['Buchungstag'] <  end_date)]
+                                 (self.data['Buchungstag'] <= end_date)]
                 
     def last_month(self):
         return self.get_months(n_months_back(1),datetime.now(),use_daily_table=False)
@@ -108,7 +111,7 @@ class BankAccount:
         # preparation
         df       = self.get_months(start,end)
         df_trans = self.get_months(start,end,use_daily_table=False)
-            
+        
         # Account balance & transactions
         Wert   = df['Wertstellung']
         Bal    = df['Balance']
@@ -116,7 +119,6 @@ class BankAccount:
         
         dates  = list(Wert[0:-1:int(np.floor(len(Wert)/6))])
         xlabels =[x.date().strftime('%Y-%m-%d') for x in dates]
-        
         
         # Expenses per month plot
         expenses, total_expenses = self.cluster_expenses(*self.total_expenses(df_trans))
@@ -214,6 +216,7 @@ class BankAccount:
         
         
     def update_daily(self):
+        print('Updatig daily transactions...\t\t\t\t', end='')
         daily_wertstellung = list(self.daily_data['Wertstellung'])
         start_date = min(daily_wertstellung)
         end_date   = max(daily_wertstellung)
@@ -235,10 +238,12 @@ class BankAccount:
         for idx, row in df.iterrows():
             if row['Balance'] == None:
                 df.loc[idx,'Balance'] = df.loc[idx-1,'Balance']
+        print('done!')
         return df
     
     def label_rows(self):
-        labels_dict = self.load_keywords_from_db()
+        print('Adding labels to transactions...\t\t\t', end='')
+        self.load_keywords_from_db()
         for idx, row in self.data.iterrows():
             row_df = pd.DataFrame(row).T
             for key in (self.db).keys():
@@ -250,6 +255,8 @@ class BankAccount:
         
             if is_miete(row_df).values[0]:
                 self.data.loc[idx,'Transaction Label'] = 'Rent'
+        print('done!')
+        
       
     def total_expenses(self, df):
         total_expenses = -df.loc[df['Betrag (EUR)'] < 0].sum()['Betrag (EUR)']
@@ -293,28 +300,21 @@ class BankAccount:
         for categorie in self.categories:
             diff[categorie] =(2*int(df1_lastest)-1)*(df1_expenses[categorie]- df2_expenses[categorie])
         return diff
-    
-    def info_labeled(self):
-        None_idx = self.data['Transaction Label'].value_counts().index.to_list().index('None')
-        transaction_label_vals = self.data['Transaction Label'].value_counts().values[None_idx]       
-        print('In total',
-              "{:.2f}".format((1-transaction_label_vals/self.data['Transaction Label'].shape[0])*100),
-              "% of all transactions have been labels.")
-        print('')
-        
+       
     def load_keywords_from_db(self, path='database.db'):
         extenstions = ['.bak', '.dat', '.dir']
         if all(list(map(lambda x: Path(path+x).is_file(),extenstions))):
-        #with shelve.open(path) as database:
-            database = shelve.open(path)
-            self.db = dict(database)
-            
+            database        = shelve.open(path)
+            self.db         = dict(database)
+            self.categories = list(self.db.keys())
+            self.categories.append('Rent')
+            self.categories.append('None')
         else:
             print('Could not find a file under the given path:', path)
             raise ValueError('Could not find a file under the given path: ' + path)
     
     def save_data(self,path):
-        self.data.to_csv(path,sep=';',quoting=int(True), encoding ='latin-1')   
+        self.data.to_csv(path,sep=';',quoting=int(True), encoding ='latin-1')
         
         with open(path, "r") as f:
             lines = f.readlines()
@@ -337,45 +337,46 @@ class BankAccount:
         
         if header_idx > -1:
             self.meta_data_lines = lines[:header_idx]
-            lines = lines[header_idx:-1]
+            lines = lines[header_idx:]
         
         with open(self.data_latest_file + 'wo_meta.csv', "w") as f:
             for line in lines:
                 f.write(line)
         return self.data_latest_file + 'wo_meta.csv'
-
-'''
-def label_row(self):
-        counter = 0
-        for idx, row in self.data.iterrows():
-            if counter+1 == 2:
-                break
-            else:
-                row_df = pd.DataFrame(row).T
-                if is_income(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Salary'
-                elif is_grocery(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Groceries'
-                elif is_dining(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Dining'
-                elif is_amazon(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Amazon'
-                elif is_miete(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Rent'
-                elif is_mobil(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Mobil phone / Internet'
-                elif is_travel(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Travel'
-                elif is_credit_card(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Credit card'
-                elif is_fuel(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Fuel'
-                elif is_insurance(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Insurance'
-                elif is_EoQuartal(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'End of quater'
-                elif is_culture(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Culture'
-                elif is_pharmacy(row_df).values[0]:
-                    self.data.loc[idx,'Transaction Label'] = 'Pharmacy'
-'''
+    
+    def get_meta_info(self):
+        print('Generating meta data...\t\t\t\t\t', end='')
+        self.meta_data = {}
+        
+        with open(self.data_latest_file, "r") as f:
+            lines = f.readlines()
+        IBAN_line_pattern    = r'.+Kontonummer.+'
+        balance_line_pattern = r'.+Kontostand.+'
+    
+        found_IBAN_line    = False
+        found_balance_line = False
+    
+        for line in lines:
+            if not found_balance_line and re.findall(balance_line_pattern, line):
+                found_balance_line = True
+                balance_line       = line
+            if not found_IBAN_line and re.findall(IBAN_line_pattern, line):
+                found_IBAN_line = True
+                IBAN_line    = line
+    
+        balance_pattern = r'\d{0,7}\.\d{0,3},\d{0,2}\sEUR'
+        current_balance_line_spltd = re.findall(balance_pattern, balance_line)[0].split()
+        self.meta_data['Balance']  = current_balance_line_spltd[0]
+        self.meta_data['Currency'] = current_balance_line_spltd[1]
+        
+        IBAN_pattern = r'[\d|\w]+'
+        current_balance_line = re.findall(IBAN_pattern, IBAN_line)
+        self.meta_data['IBAN']    = current_balance_line[1]
+        self.meta_data['BA_type'] = current_balance_line[2]
+        
+        self.current_balance   = float(self.meta_data['Balance'].replace('.','').replace(',','.'))
+        self.currency          = self.meta_data['Currency']
+        self.bank_account_type = self.meta_data['BA_type']
+        self.IBAN              = self.meta_data['IBAN']
+        print('done!')
+        

@@ -51,10 +51,9 @@ def get_month(data, month,year, use_Werstellung = True):
 
 def add_balance_col(data, current_balance):
     s = [current_balance]
-    for i, transaction in enumerate(reversed(data['Betrag (EUR)'])):
+    for i, transaction in enumerate(data['Betrag (EUR)']):
         s.append(s[i]-transaction)
     del s[-1]
-    s.reverse()
     data['Balance'] = s
     return data
 
@@ -84,7 +83,7 @@ def prep_table(data, current_balance):
         print('done!')
         
     return data
-
+'''
 def search_for_relevant_columns(col_names):
     if 'Buchungstag' not in col_names:
         return False, 'Buchungstag'
@@ -120,6 +119,7 @@ def valid_table(data,current_balance):
         pd.set_option('display.max_columns', None)
         data = prep_table(data, current_balance)
         return data
+'''
  
 def is_valid_csv_file(path):
     my_file = Path(path)
@@ -135,34 +135,6 @@ def is_valid_csv_file(path):
                 return False
     return True
 
-def get_meta_info(path):
-    d={}
-    with open(path, "r") as f:
-        lines = f.readlines()
-    IBAN_line_pattern    = r'.+Kontonummer.+'
-    balance_line_pattern = r'.+Kontostand.+'
-
-    found_IBAN_line    = False
-    found_balance_line = False
-
-    for line in lines:
-        if not found_balance_line and re.findall(balance_line_pattern, line):
-            found_balance_line = True
-            balance_line       = line
-        if not found_IBAN_line and re.findall(IBAN_line_pattern, line):
-            found_IBAN_line = True
-            IBAN_line    = line
-
-    balance_pattern = r'\d{0,7}\.\d{0,3},\d{0,2}\sEUR'
-    current_balance_line_spltd = re.findall(balance_pattern, balance_line)[0].split()
-    d['Balance']  = current_balance_line_spltd[0]
-    d['Currency'] = current_balance_line_spltd[1]
-    
-    IBAN_pattern = r'[\d|\w]+'
-    current_balance_line = re.findall(IBAN_pattern, IBAN_line)
-    d['IBAN']    = current_balance_line[1]
-    d['BA_type'] = current_balance_line[2]
-    return d
 
 def erase_meta_data(path):
     with open(path, "r") as f:
@@ -202,66 +174,6 @@ def generate_days(first,last):
         first += step
     return result
     
-def is_income(df):
-    Buchungstext_keywords     = ['Gehalt']
-    Verwendungszweck_keywords = ['Unterhalt', 'Semesterbeitrag']
-    return (df['Buchungstext'].str.contains("|".join(Buchungstext_keywords),case=False,na=False) |
-            df['Verwendungszweck'].str.contains("|".join(Verwendungszweck_keywords),case=False,na=False))
-
-def is_grocery(df):
-    Verwendungszweck_keywords = ['REWE']
-    Auftraggeber_keywords     = ['REWE', 'EDEKA', 'PENNY', 'KAUFLAND', 'NETTO', 'ALECO GMBH', 'ALDI',
-                                 'Lebensmittel', 'LIDL', 'E-CENTER', 'DM FIL', 'ROSSMANN', 'MARKT']
-    return (df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False) |
-            df['Verwendungszweck'].str.contains("|".join(Verwendungszweck_keywords),case=False,na=False))
-    
-def is_dining(df):
-    Auftraggeber_keywords     = ['RESTAURANT', 'IMBISS', 'CAFE', 'MCDONALDS', 'SUBWAY', 'Burger King', 'GASTRO',
-                                 'VAPIANO', 'BAE?CK', 'LOSTERIA', 'COFFEE', 'SUSHI', 'PIZZA', 'MENSACARD', 'DEAN \+ DAVID']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
-def is_amazon(df):
-    Auftraggeber_keywords     = ['AMAZON']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
 def is_miete(df):
     return (df['Verwendungszweck'].str.contains('Miet',case=False,na=False) & 
            (df['Buchungstext'].str.contains('Gutschrift',case=False,na=False) == False))
-
-def is_mobil(df):
-    Auftraggeber_keywords     = ['Vodafone', 'Drillisch', 'o2', 'Telekom', '1\&1', 'congstar', 'mobilcom-debitel','Klarmobil']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
-
-def is_travel(df):
-    Auftraggeber_keywords     = ['HOTEL', 'BAHN AG', 'DB AG', 'FERNVERKEHR', 'Motel One', 'JUGENDHERBERG', 'DB VERTRIEB']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
-def is_credit_card(df):
-    Auftraggeber_keywords     = ['KREDITKARTENABRECHNUNG', 'DKB VISACARD']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
-def is_fuel(df):
-    Auftraggeber_keywords     = ['SHELL', 'Tank', 'ESSO', 'JET', 'AVIA', 'TOTAL Service', 'AGIP','OIL']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
-def is_insurance(df):
-    Auftraggeber_keywords     = ['VERSICHERUNG', 'Bundeskasse in Kiel', 'HKK', 'BKK']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-
-def is_culture(df):
-    Auftraggeber_keywords     = ['Sportverein', 'Turnverein', 'ENTERTAIN', 'SPORT', 'FITNESS', 'CLUB', 'Zeitung']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-    
-def is_EoQuartal(df):
-    Buchungstext_keywords=['Abschluss']
-    return df['Buchungstext'].str.contains("|".join(Buchungstext_keywords),case=False,na=False)
-
-def is_pharmacy(df):
-    Auftraggeber_keywords     = ['APOTHEKE']
-    return df['Auftraggeber / Begünstigter'].str.contains("|".join(Auftraggeber_keywords),case=False,na=False)
-    
-
-def label_row(df):
-    keywords_dict = load_keywords_from_db()
-    
