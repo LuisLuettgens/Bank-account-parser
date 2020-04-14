@@ -444,10 +444,7 @@ class DKB(base.BankAccount):
         Raises:
             KeyError: If old is not a member of data.columns
         """
-        if old not in self.categories:
-            raise KeyError('self.data has no column named: ' + old + '. Please make sure it exists.')
-        else:
-            self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
+        self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
         return True
 
     def add_category(self, category: str, path: str = '') -> bool:
