@@ -450,7 +450,7 @@ class DKB(base.BankAccount):
             self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
         return True
 
-    def add_category(self, path: str = '', category: str) -> bool:
+    def add_category(self, category: str, path: str = '') -> bool:
         """
                 This function deletes a category from the database
                 Args:
@@ -469,7 +469,7 @@ class DKB(base.BankAccount):
         database.close()
         return True
 
-    def pop_category(self, path: str = '', category: str) -> bool:
+    def pop_category(self, category: str, path: str = '') -> bool:
         """
         This function deletes a category from the database
         Args:
