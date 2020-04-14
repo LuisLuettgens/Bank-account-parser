@@ -5,21 +5,19 @@ Created on Fri Apr 10 12:52:19 2020
 @author: LUL3FE
 """
 
-import BankAccount as base
-import helper as helper
 import functools
-import pandas as pd
-import numpy as np
 import os
 import shelve
-import re
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timedelta
-import string
 from typing import List
-import locale
 
+import numpy as np
+import pandas as pd
 from pandas.plotting import register_matplotlib_converters
+
+import BankAccount as base
+import helper as helper
 
 
 class DKB(base.BankAccount):
@@ -53,7 +51,7 @@ class DKB(base.BankAccount):
         col_types = {'Betrag (EUR)': np.float, 'Balance': np.float}
 
         self.date_format = '%d.%m.%Y'
-        DKB_date_parser = lambda x: pd.datetime.strptime(str(x), self.date_format)
+        date_parser_dkb = lambda x: pd.datetime.strptime(str(x), self.date_format)
 
         self.has_transaction_label_col = False
         self.has_balance_col = False
@@ -73,7 +71,7 @@ class DKB(base.BankAccount):
                                         encoding='latin_1',
                                         usecols=self.DKB_header_labeled,
                                         parse_dates=['Buchungstag', 'Wertstellung'],
-                                        date_parser=DKB_date_parser,
+                                        date_parser=date_parser_dkb,
                                         dtype=col_types,
                                         decimal=',',
                                         thousands='.',
@@ -86,7 +84,7 @@ class DKB(base.BankAccount):
                                         encoding='latin_1',
                                         usecols=self.DKB_header_unlabeled,
                                         parse_dates=['Buchungstag', 'Wertstellung'],
-                                        date_parser=DKB_date_parser,
+                                        date_parser=date_parser_dkb,
                                         dtype=col_types,
                                         decimal=',',
                                         thousands='.',
@@ -129,8 +127,8 @@ class DKB(base.BankAccount):
 
     def change_label(self, row_idx: int, label: str) -> pd.DataFrame:
         """
-        This function allows you to change the label of an entry by hand based on the row index. After the entry was changed you get asked 
-        whether all entries with the same 'Auftraggeber / Begünstigter' get the same label.
+        This function allows you to change the label of an entry by hand based on the row index. After the entry was
+        changed you get asked whether all entries with the same 'Auftraggeber / Begünstigter' get the same label.
         
         Args:
             self:    An object of the class DKB
@@ -155,8 +153,8 @@ class DKB(base.BankAccount):
             user_input = input(output)
             if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
                 print('Changing all other labels accordingly...\t', end='')
-                for idx in self.data[
-                    self.data['Auftraggeber / Begünstigter'].str.contains(counterpart, case=False, na=False)].index:
+                for idx in self.data[self.data['Auftraggeber / Begünstigter'].str.contains(counterpart, case=False,
+                                                                                           na=False)].index:
                     self.data.loc[idx, 'Transaction Label'] = label
                 print('done!')
                 return self.data[
@@ -176,8 +174,8 @@ class DKB(base.BankAccount):
         Returns:
             Returns the minimum of n and all possible rows without a transaction label as a DataFrame.          
        """
-        None_entries = self.data[self.data['Transaction Label'] == 'None']
-        return None_entries.sample(n=min(n, None_entries.shape[0]))
+        none_entries = self.data[self.data['Transaction Label'] == 'None']
+        return none_entries.sample(n=min(n, none_entries.shape[0]))
 
     def prep_table(self, sort_by='Wertstellung', ascending=False) -> None:
         """
@@ -187,7 +185,7 @@ class DKB(base.BankAccount):
         Args:
             self:      An object of the class DKB
             sort_by:   Column name by which the table shall be sorted (default = 'Wertstellung')
-            ascending: Sorting order (default= decending)
+            ascending: Sorting order (default= descending)
             
         Returns:
             None
@@ -219,18 +217,10 @@ class DKB(base.BankAccount):
         Raises:
             ValueError: Raised when one of the column names is missing.
         """
-        print('Checking whether table is in expcted DKB-format...\t', end='')
+        print('Checking whether table is in expected DKB-format...\t', end='')
 
         if self.pre_labeled:
-            '''
-            print()
-            print('labels:',self.DKB_header_labeled)
-            print('columns:', self.data.columns)
-            print('labels - cols:', self.DKB_header_labeled - set(self.data.columns))
-            print('cols - labels:', set(self.data.columns) - self.DKB_header_labeled)
-            '''
             missing_cols = self.DKB_header_labeled.difference(self.data.columns)
-            # print('missing cols:' ,missing_cols)
         else:
             missing_cols = self.DKB_header_unlabeled.difference(self.data.columns)
 
@@ -261,16 +251,11 @@ class DKB(base.BankAccount):
         """
         # TODO: this can cause an error, if no 'None' label is left
         None_idx = list(self.data['Transaction Label'].value_counts().index).index('None')
-        transaction_label_vals = self.data['Transaction Label'].value_counts().values[None_idx]
+        transaction_label_values = self.data['Transaction Label'].value_counts().values[None_idx]
 
-        if self.pre_labeled:
-            print('In total',
-                  "{:.2f}".format((1 - transaction_label_vals / self.data['Transaction Label'].shape[0]) * 100),
-                  "% of all transactions have been labeled.")
-        else:
-            print('In total',
-                  "{:.2f}".format((1 - transaction_label_vals / self.data['Transaction Label'].shape[0]) * 100),
-                  "% of all transactions have labels.")
+        print('In total',
+              "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100)
+              , "% of all transactions have labels.")
 
         print('')
 
@@ -288,6 +273,7 @@ class DKB(base.BankAccount):
             
         Returns:
             A DataFrame containing only entries from the closed interval [start, end] with 'Transaction Label' equal to categorie.
+
         Raises:
             ValueError: Raised when category does not appear in self.categories.
         
@@ -369,7 +355,7 @@ class DKB(base.BankAccount):
         print('The data was successfully saved under this path:', path)
         return True
 
-    def label_rows(self, path: str='') -> bool:
+    def label_rows(self, path: str = '') -> bool:
         """
         This function adds labels to each transaction in self.data. Basis is the keyword database. Previously labeled
         entries are not labeled again. So far the keywords stored in the database file are concatenated via 'or/|',
@@ -403,7 +389,7 @@ class DKB(base.BankAccount):
                             0]:
                             self.data.loc[idx, 'Transaction Label'] = label
 
-                if helper.is_miete(row_df).values[0]:
+                if helper.is_rent(row_df).values[0]:
                     self.data.loc[idx, 'Transaction Label'] = 'Rent'
         print('done!')
         return True
@@ -423,7 +409,8 @@ class DKB(base.BankAccount):
         """
 
         if 'Betrag (EUR)' not in data.columns:
-            raise KeyError('The input DataFrame has no column named: ' + 'Betrag (EUR)' + '. Please make sure it exists.')
+            raise KeyError(
+                'The input DataFrame has no column named: ' + 'Betrag (EUR)' + '. Please make sure it exists.')
         else:
             s = [self.current_balance]
             for i, transaction in enumerate(data['Betrag (EUR)']):
