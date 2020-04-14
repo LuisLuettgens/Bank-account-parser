@@ -508,5 +508,3 @@ class DKB(base.BankAccount):
                 print(line)
                 f.write(line)
         f.close()
-
-    replace_german_umlauts()
