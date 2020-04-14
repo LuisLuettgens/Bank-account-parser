@@ -444,8 +444,46 @@ class DKB(base.BankAccount):
         Raises:
             KeyError: If old is not a member of data.columns
         """
-        if old not in self.data.columns:
+        if old not in self.categories:
             raise KeyError('self.data has no column named: ' + old + '. Please make sure it exists.')
         else:
             self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
+        return True
+
+    def add_category(self, path: str = '', category: str) -> bool:
+        """
+                This function deletes a category from the database
+                Args:
+                    path: path to database (default = self.database)
+                    category: name of the category that shall be removed
+
+                Returns:
+                    True if the deletion was successful
+        """
+        if path is '':
+            path = self.database
+        database = shelve.open(path)
+        database[category] = {}
+        database.sync()
+        print(database.keys())
+        database.close()
+        return True
+
+    def pop_category(self, path: str = '', category: str) -> bool:
+        """
+        This function deletes a category from the database
+        Args:
+            path: path to database (default = self.database)
+            category: name of the category that shall be removed
+
+        Returns:
+            True if the deletion was successful
+        """
+        if path is '':
+            path = self.database
+        database = shelve.open(path)
+        database.pop(category, None)
+        database.sync()
+        print(database.keys())
+        database.close()
         return True
