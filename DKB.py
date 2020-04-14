@@ -481,29 +481,32 @@ class DKB(base.BankAccount):
         database.sync()
         print(list(database.keys()))
         database.close()
-        self.lo    def replace_german_umlauts(self):
-        chars = {'ö': 'oe',
-                 'Ö': 'Oe',
-                 'ä': 'ae',
-                 'Ä': 'Ae',
-                 'ü': 'ue',
-                 'Ü': 'Ue'}
-
-        line = "Irgendein lästiger, übler, öder Text."
-        for char in chars:
-            line = line.replace(char, chars[char])
-        print(line)ad_keywords_from_db(self.database)
-        return True
+        self.load_keywords_from_db(self.database)
 
     def replace_german_umlauts(self):
+
         chars = {'ö': 'oe',
                  'Ö': 'Oe',
                  'ä': 'ae',
                  'Ä': 'Ae',
                  'ü': 'ue',
-                 'Ü': 'Ue'}
+                 'Ü': 'Ue',
+                 'ß': 'ss'}
+        lines = []
 
-        line = "Irgendein lästiger, übler, öder Text."
-        for char in chars:
-            line = line.replace(char, chars[char])
-        print(line)
+        with open('1036976429_v4test.csv', "r", encoding=self.encoding) as f:
+            lines_local = f.readlines()
+
+            for line in lines_local:
+                for char in chars:
+                    line = line.replace(char, chars[char])
+                lines.append(line)
+            f.close()
+
+        with open('1036976429_v5test.csv', "w+", encoding='utf-8') as f:
+            for line in lines:
+                print(line)
+                f.write(line)
+        f.close()
+
+    replace_german_umlauts()
