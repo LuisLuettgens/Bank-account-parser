@@ -23,14 +23,19 @@ from pandas.plotting import register_matplotlib_converters
 
 
 class DKB(base.BankAccount):
-    def __init__(self, data_latest_file: str, pre_labeled: bool = False, other_data_files: List[str] = []):
+    def __init__(self,
+                 data_latest_file: str,
+                 pre_labeled: bool = False,
+                 other_data_files: List[str] = [],
+                 database='database.db'):
         register_matplotlib_converters()
         print('')
         self.data_latest_file = data_latest_file
         self.data_other_files = other_data_files
         self.dfs = []
         self.get_meta_info()
-        self.load_keywords_from_db()
+        self.database = database
+        self.load_keywords_from_db(self.database)
         self.pre_labeled = pre_labeled
 
         latest_data_file_compressed_path = self.erase_meta_data()
@@ -148,7 +153,7 @@ class DKB(base.BankAccount):
             print('Changed the label from: ', current_label, 'to', label, '.')
             output = ' '.join(['Do you want to change all transactions with', counterpart, 'to', label, '?[y/n]\t'])
             user_input = input(output)
-            if user_input == 'y':
+            if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
                 print('Changing all other labels accordingly...\t', end='')
                 for idx in self.data[
                     self.data['Auftraggeber / Begünstigter'].str.contains(counterpart, case=False, na=False)].index:
@@ -229,12 +234,12 @@ class DKB(base.BankAccount):
         else:
             missing_cols = self.DKB_header_unlabeled.difference(self.data.columns)
 
-        if (len(missing_cols) == 1):
+        if len(missing_cols) == 1:
             raise ValueError('The column: ' + ', '.join(
                 missing_cols) + ' does not appear as a column name in the provided csv. Please make sure that '
                                 'it exists and try again...')
         ##
-        if (len(missing_cols) > 1):
+        if len(missing_cols) > 1:
             raise ValueError('The columns: ' + ', '.join(
                 missing_cols) + ' do not appear as a column names in the provided csv. Please make sure that '
                                 'it exists and try again...')
@@ -286,10 +291,10 @@ class DKB(base.BankAccount):
             ValueError: Raised when categorie does not appear in self.categories.
         
         """
-        if start == None:
+        if start is None:
             start = self.start_date
 
-        if end == None:
+        if end is None:
             end = self.end_date
 
         if categorie not in self.categories:
@@ -299,10 +304,10 @@ class DKB(base.BankAccount):
             df_trans = self.get_months(start, end, use_daily_table=False)
             return df_trans[df_trans['Transaction Label'] == categorie]
 
-    def load_keywords_from_db(self, path: str = 'database.db') -> None:
+    def load_keywords_from_db(self, path: str = '') -> None:
         """
         This function load a database from 'path' and it as a dictonary of dictonaries in self.db. The keys of self.db are the known categories.
-        furtuermore three categories: 'Rent', 'None' and 'Private' added.
+        furthermore three categories: 'Rent', 'None' and 'Private' added.
         
         Args:
             self: An object of the class DKB.
@@ -313,41 +318,76 @@ class DKB(base.BankAccount):
         Raises:
             ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
         """
-        extenstions = ['.bak', '.dat', '.dir']
-        if all(list(map(lambda x: Path(path + x).is_file(), extenstions))):
+        if path is '':
+            path = self.database
+        extensions = ['.bak', '.dat', '.dir']
+        if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
             database = shelve.open(path)
             self.db = dict(database)
             self.categories = list(self.db.keys())
-            self.categories.append('Rent')
-            self.categories.append('None')
-            self.categories.append('Private')
+            self.categories.extend(['Rent', 'None', 'Private'])
         else:
             raise ValueError('Could not find a file under the given path: ' + path)
 
-    def all_categories(self):
+    def all_categories(self) -> List[str]:
+        """
+            This function returns all known categories of the DKB-object.
+        Returns:
+            All known categories ('Transaction Labels') as a list of strings
+        """
         return self.categories
 
-    def save_data(self, path: str):
+    def save_data(self, path: str) -> bool:
+        """
+            This function creates a new csv file based on the current status of the DataFrame: self.data. The format of
+            the csv matches the expected formatting of the constructor of the DKB-object.
+        Args:
+            path: Location where the DataFrame shall be stored to.
+
+        Returns:
+            True if the saving process was successful
+        """
         self.data.to_csv(path,
                          sep=';',
                          quoting=int(True),
-                         encoding='latin-1',
+                         encoding='latin_1',
                          date_format=self.date_format,
                          columns=self.DKB_header_labeled_list,
+                         index=False,
                          decimal=',')
 
-        with open(path, "r") as f:
+        with open(path, "r", encoding='latin_1') as f:
             lines = f.readlines()
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding='latin_1') as f:
             for line in self.meta_data_lines:
                 f.write(line)
             for line in lines:
                 f.write(line)
 
-    def label_rows(self):
+        print('The data was successfully saved under this path:', path)
+        return True
+
+    def label_rows(self, path: str='') -> bool:
+        """
+        This function adds labels to each transaction in self.data. Basis is the keyword database. Previously labeled
+        entries are not labeled again. So far the keywords stored in the database file are concatenated via 'or/|',
+        this implies any labeling rule that uses 'and/&' has to be added manually like it is done with the label 'Rent'.
+
+        Args:
+            path location where the database is stored
+
+        Returns:
+            True if the labeling was successful
+
+        Raises:
+            ValueError: When no matching file can be found at the input path
+
+        """
         print('Adding labels to transactions...\t\t\t', end='')
-        self.load_keywords_from_db()
+        if path is '':
+            path = self.database
+        self.load_keywords_from_db(path)
         for idx, row in self.data.iterrows():
             row_df = pd.DataFrame(row).T
 
@@ -365,14 +405,39 @@ class DKB(base.BankAccount):
                 if helper.is_miete(row_df).values[0]:
                     self.data.loc[idx, 'Transaction Label'] = 'Rent'
         print('done!')
+        return True
 
     def add_balance_col(self, data: pd.DataFrame) -> pd.DataFrame:
-        s = [self.current_balance]
-        for i, transaction in enumerate(data['Betrag (EUR)']):
-            s.append(s[i] - transaction)
-        del s[-1]
-        data['Balance'] = s
-        return data
+        """
+            Based on the self.current_balance and the transactions in columns 'Betrag (EUR)' of data the balance for
+            each row is reverse engineered.
+        Args:
+            data: the DataFrame that shall be augmented with a 'Balance' column
 
-    def get_row(self, idx):
+        Returns:
+            The input DataFrame with an additional column named 'Balance'
+
+        Raises:
+            An KeyError when the input DataFrame has no column with name 'Betrag (EUR)'.
+        """
+
+        if 'Betrag (EUR)' not in data.columns:
+            raise KeyError('The input DataFrame has no column named: ' + 'Betrag (EUR)' + '. Please make sure it exists.')
+        else:
+            s = [self.current_balance]
+            for i, transaction in enumerate(data['Betrag (EUR)']):
+                s.append(s[i] - transaction)
+            del s[-1]
+            data['Balance'] = s
+            return data
+
+    def get_row(self, idx: int) -> pd.DataFrame:
+        """
+            Getter function for rows in self.data
+        Args:
+            idx: row index
+
+        Returns:
+            returns the row with index 'idx' as a DataFrame
+        """
         return pd.DataFrame(self.data.iloc[idx]).T

@@ -27,6 +27,22 @@ def generate_days(first,last):
         first += step
     return result
 
+def is_valid_csv_file(path):
+    my_file = Path(path)
+    if not my_file.is_file():
+        user_input = input('The path: ' + path + ' cannot be resolved to a valid file. Do you want to continue anyways? '
+                                                 '[y/n]... ')
+        if user_input not in ['y', 'Y', 'yes', 'ja', 'Ja']:
+            return False
+    else:
+        pattern = r'\.csv$'
+        if re.search(pattern, path) is None:
+            user_input = input('The passed file does not appear to be a csv file. Do you want to continue anyways? ['
+                               'y/n]... ' )
+            if user_input not in ['y', 'Y', 'yes', 'ja', 'Ja']:
+                return False
+    return True
+
 '''
 def american_format_to_DBK(x):
     x_split = x.split('-')
@@ -134,20 +150,6 @@ def valid_table(data,current_balance):
         pd.set_option('display.max_columns', None)
         data = prep_table(data, current_balance)
         return data
- 
-def is_valid_csv_file(path):
-    my_file = Path(path)
-    if not my_file.is_file():
-        user_input = input('The path: ' + path + ' cannot be resolved to a valid file. Do you want to continue anyways? [y/n]... ')
-        if user_input not in ['y', 'Y', 'yes', 'ja', 'Ja']:
-            return False
-    else:
-        pattern = r'\.csv$'
-        if re.search(pattern, path) is None:
-            user_input = input('The passed file does not appear to be a csv file. Do you want to continue anyways? [y/n]... ' )
-            if user_input not in ['y', 'Y', 'yes', 'ja', 'Ja']:
-                return False
-    return True
 
 
 def erase_meta_data(path):
