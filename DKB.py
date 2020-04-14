@@ -25,7 +25,8 @@ class DKB(base.BankAccount):
                  data_latest_file: str,
                  pre_labeled: bool = False,
                  other_data_files: List[str] = [],
-                 database='database.db'):
+                 database='database.db',
+                 encoding='latin_1'):
         register_matplotlib_converters()
         print('')
         self.data_latest_file = data_latest_file
@@ -35,7 +36,7 @@ class DKB(base.BankAccount):
         self.database = database
         self.load_keywords_from_db(self.database)
         self.pre_labeled = pre_labeled
-
+        self.encoding = encoding
         latest_data_file_compressed_path = self.erase_meta_data()
 
         self.DKB_header_unlabeled_list = ['Buchungstag', 'Wertstellung', 'Buchungstext', 'Auftraggeber / Begünstigter',
@@ -56,7 +57,7 @@ class DKB(base.BankAccount):
         self.has_transaction_label_col = False
         self.has_balance_col = False
 
-        with open(data_latest_file, "r", encoding='latin_1') as f:
+        with open(data_latest_file, "r", encoding=self.encoding) as f:
             lines = f.readlines()
 
         for line in lines:
@@ -68,7 +69,7 @@ class DKB(base.BankAccount):
         if self.has_balance_col and self.has_transaction_label_col:
             self.dfs.append(pd.read_csv(latest_data_file_compressed_path,
                                         delimiter=';',
-                                        encoding='latin_1',
+                                        encoding=self.encoding,
                                         usecols=self.DKB_header_labeled,
                                         parse_dates=['Buchungstag', 'Wertstellung'],
                                         date_parser=date_parser_dkb,
@@ -81,7 +82,7 @@ class DKB(base.BankAccount):
         else:
             self.dfs.append(pd.read_csv(latest_data_file_compressed_path,
                                         delimiter=';',
-                                        encoding='latin_1',
+                                        encoding=self.encoding,
                                         usecols=self.DKB_header_unlabeled,
                                         parse_dates=['Buchungstag', 'Wertstellung'],
                                         date_parser=date_parser_dkb,
@@ -99,7 +100,7 @@ class DKB(base.BankAccount):
             if not helper.is_valid_csv_file(data_file):
                 raise ValueError('The input file causes problems. Please input an other file...')
             else:
-                self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding='latin-1'))
+                self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding=self.encoding))
                 print('done!')
 
         append_ignore_idx = functools.partial(pd.DataFrame.append, ignore_index=True)
@@ -337,20 +338,13 @@ class DKB(base.BankAccount):
         self.data.to_csv(path,
                          sep=';',
                          quoting=int(True),
-                         encoding='latin_1',
+                         encoding=self.encoding,
                          date_format=self.date_format,
                          columns=self.DKB_header_labeled_list,
                          index=False,
                          decimal=',')
 
-        with open(path, "r", encoding='latin_1') as f:
-            lines = f.readlines()
 
-        with open(path, "w", encoding='latin_1') as f:
-            for line in self.meta_data_lines:
-                f.write(line)
-            for line in lines:
-                f.write(line)
 
         print('The data was successfully saved under this path:', path)
         return True
@@ -431,7 +425,8 @@ class DKB(base.BankAccount):
         return pd.DataFrame(self.data.iloc[idx]).T
 
     def change_category(self, old: str, new: str) -> bool:
-        #TODO: sync changes with database
+        # TODO: sync changes with database
+        # TODO: looks like they are not working properly
         """
             changes all labels from a category to the new label
         Args:
@@ -448,6 +443,7 @@ class DKB(base.BankAccount):
         return True
 
     def add_category(self, category: str, path: str = '') -> bool:
+        # TODO: looks like they are not working properly
         """
                 This function deletes a category from the database
                 Args:
@@ -468,6 +464,7 @@ class DKB(base.BankAccount):
         return True
 
     def pop_category(self, category: str, path: str = '') -> bool:
+        # TODO: looks like they are not working properly
         """
         This function deletes a category from the database
         Args:
@@ -484,5 +481,29 @@ class DKB(base.BankAccount):
         database.sync()
         print(list(database.keys()))
         database.close()
-        self.load_keywords_from_db(self.database)
+        self.lo    def replace_german_umlauts(self):
+        chars = {'ö': 'oe',
+                 'Ö': 'Oe',
+                 'ä': 'ae',
+                 'Ä': 'Ae',
+                 'ü': 'ue',
+                 'Ü': 'Ue'}
+
+        line = "Irgendein lästiger, übler, öder Text."
+        for char in chars:
+            line = line.replace(char, chars[char])
+        print(line)ad_keywords_from_db(self.database)
         return True
+
+    def replace_german_umlauts(self):
+        chars = {'ö': 'oe',
+                 'Ö': 'Oe',
+                 'ä': 'ae',
+                 'Ä': 'Ae',
+                 'ü': 'ue',
+                 'Ü': 'Ue'}
+
+        line = "Irgendein lästiger, übler, öder Text."
+        for char in chars:
+            line = line.replace(char, chars[char])
+        print(line)
