@@ -159,7 +159,7 @@ class BankAccount:
         axes[0,1].set_xticklabels(xlabels, rotation=20)
         axes[0,1].set_title("Spendings")
 
-        # Expenses per categorie
+        # Expenses per category
         axes[1,0].pie(expenses.values(),labels=expenses.keys(), autopct='%1.1f%%',shadow=True, startangle=90)
         axes[1,0].axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         axes[1,0].set_title("Expenses per category")
@@ -261,8 +261,8 @@ class BankAccount:
     def total_expenses(self, df):
         total_expenses = -df.loc[df['Betrag (EUR)'] < 0].sum()['Betrag (EUR)']
         expenses = {}
-        for categorie in self.categories:
-            expenses[categorie] = -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == categorie)].sum()['Betrag (EUR)']
+        for category in self.categories:
+            expenses[category] = -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']
         return expenses, total_expenses
     
     def cluster_expenses(self,d,total_expenses, min_quota = 0.025):
@@ -273,19 +273,19 @@ class BankAccount:
                 del d[key]
         return d, total_expenses
     
-    def categorie_expenses(self, df, categorie):
-        return {categorie: -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == categorie)].sum()['Betrag (EUR)']}    
+    def category_expenses(self, df, category):
+        return {category: -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']}
         
-    def get_categorie(self,categorie,start,end):
-        if categorie not in self.categories:
-            print('ERROR: This is an unknown categorie!\n')
+    def get_category(self,category,start,end):
+        if category not in self.categories:
+            print('ERROR: This is an unknown category!\n')
             print('Choose one of the following categories:')
             for i, cat in enumerate(self.categories):
                 print(i,': ', cat)
             return False
         else:
             df_trans = self.get_months(start,end,use_daily_table=False)
-            return df_trans[df_trans['Transaction Label'] == categorie]
+            return df_trans[df_trans['Transaction Label'] == category]
     
     def trend_adjacent(self,df1, df2):
         # assuming they are actually adjacent
@@ -297,8 +297,8 @@ class BankAccount:
         df2_expenses, _ = self.total_expenses(df2)
         
         diff = {}
-        for categorie in self.categories:
-            diff[categorie] =(2*int(df1_lastest)-1)*(df1_expenses[categorie]- df2_expenses[categorie])
+        for category in self.categories:
+            diff[category] =(2*int(df1_lastest)-1)*(df1_expenses[category]- df2_expenses[category])
         return diff
        
     def load_keywords_from_db(self, path='database.db'):

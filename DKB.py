@@ -274,13 +274,14 @@ class DKB(base.BankAccount):
 
         print('')
 
-    def get_categorie(self, categorie: str, start: datetime = None, end: datetime = None) -> pd.DataFrame:
+    def get_category(self, category: str, start: datetime = None, end: datetime = None) -> pd.DataFrame:
         """
-            This function let's you filter self.data for a given categorie in a time interval. If no start or end time are supplied the minimum and maximum are used respectively instead.
+            This function let's you filter self.data for a given category in a time interval. If no start or end time
+            are supplied the minimum and maximum are used respectively instead.
         
         Args:
             self:      An object of the class DKB.
-            categorie: The label that shall be filtered for
+            category: The label that shall be filtered for
             start:     The start datetime that is used for that query (default = None)
             end:       The end datetime that is used for that query (default = None)
             
@@ -288,7 +289,7 @@ class DKB(base.BankAccount):
         Returns:
             A DataFrame containing only entries from the closed interval [start, end] with 'Transaction Label' equal to categorie.
         Raises:
-            ValueError: Raised when categorie does not appear in self.categories.
+            ValueError: Raised when category does not appear in self.categories.
         
         """
         if start is None:
@@ -297,12 +298,12 @@ class DKB(base.BankAccount):
         if end is None:
             end = self.end_date
 
-        if categorie not in self.categories:
+        if category not in self.categories:
             raise ValueError(
                 'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
         else:
             df_trans = self.get_months(start, end, use_daily_table=False)
-            return df_trans[df_trans['Transaction Label'] == categorie]
+            return df_trans[df_trans['Transaction Label'] == category]
 
     def load_keywords_from_db(self, path: str = '') -> None:
         """
