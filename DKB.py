@@ -465,7 +465,7 @@ class DKB(base.BankAccount):
         database = shelve.open(path)
         database[category] = {}
         database.sync()
-        print(database.keys())
+        print(list(database.keys()))
         database.close()
         return True
 
@@ -484,6 +484,6 @@ class DKB(base.BankAccount):
         database = shelve.open(path)
         database.pop(category, None)
         database.sync()
-        print(database.keys())
+        print(list(database.keys()))
         database.close()
         return True
