@@ -13,6 +13,21 @@ import shelve
 
 # Konvertiert einen String in ein Datum (Datum im DKB-Format)
 
+def is_miete(df):
+    return (df['Verwendungszweck'].str.contains('Miet',case=False,na=False) & 
+           (df['Buchungstext'].str.contains('Gutschrift',case=False,na=False) == False))
+
+def generate_days(first,last):
+    step = timedelta(days=1)
+    last += timedelta(days=1)
+    result = []
+    while first < last:
+        result.append(pd.Timestamp(first.strftime('%Y-%m-%d %H:%M:%S')))
+        #result.append(start)
+        first += step
+    return result
+
+'''
 def american_format_to_DBK(x):
     x_split = x.split('-')
     x_split[0], x_split[2] = x_split[2], x_split[0]
@@ -83,7 +98,7 @@ def prep_table(data, current_balance):
         print('done!')
         
     return data
-'''
+
 def search_for_relevant_columns(col_names):
     if 'Buchungstag' not in col_names:
         return False, 'Buchungstag'
@@ -119,7 +134,6 @@ def valid_table(data,current_balance):
         pd.set_option('display.max_columns', None)
         data = prep_table(data, current_balance)
         return data
-'''
  
 def is_valid_csv_file(path):
     my_file = Path(path)
@@ -177,3 +191,4 @@ def generate_days(first,last):
 def is_miete(df):
     return (df['Verwendungszweck'].str.contains('Miet',case=False,na=False) & 
            (df['Buchungstext'].str.contains('Gutschrift',case=False,na=False) == False))
+'''

@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from IPython.core.display import display, HTML
 from pathlib import Path
 import functools
-from helper import *
+import helper as helper
 from pandas.plotting import register_matplotlib_converters
 import shelve
 
@@ -55,7 +55,7 @@ class BankAccount:
         self.data = valid_table(self.data,self.current_balance)
         
         self.daily_data = self.data[['Wertstellung','Betrag (EUR)']].groupby('Wertstellung').sum().reset_index()
-        self.daily_data = add_balance_col(self.daily_data, self.current_balance)
+        self.daily_data = helper.add_balance_col(self.daily_data, self.current_balance)
         
         print('Updatig daily transactions...\t\t\t\t', end='')
         self.daily_data = self.update_daily()
@@ -220,7 +220,7 @@ class BankAccount:
         daily_wertstellung = list(self.daily_data['Wertstellung'])
         start_date = min(daily_wertstellung)
         end_date   = max(daily_wertstellung)
-        days = generate_days(start_date, end_date)
+        days = helper.generate_days(start_date, end_date)
         df = pd.DataFrame({'Wertstellung': [], 'Betrag (EUR)': [], 'Balance': []})
     
         for day in days:
@@ -327,7 +327,7 @@ class BankAccount:
         
       
     def erase_meta_data(self):
-        with open(self.data_latest_file, "r") as f:
+        with open(self.data_latest_file, "r", encoding='latin_1') as f:
             lines = f.readlines()
     
         header_idx = -1
@@ -348,7 +348,7 @@ class BankAccount:
         print('Generating meta data...\t\t\t\t\t', end='')
         self.meta_data = {}
         
-        with open(self.data_latest_file, "r") as f:
+        with open(self.data_latest_file, "r", encoding='latin_1') as f:
             lines = f.readlines()
         IBAN_line_pattern    = r'.+Kontonummer.+'
         balance_line_pattern = r'.+Kontostand.+'
