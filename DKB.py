@@ -429,3 +429,23 @@ class DKB(base.BankAccount):
             returns the row with index 'idx' as a DataFrame
         """
         return pd.DataFrame(self.data.iloc[idx]).T
+
+    def change_category(self, old: str, new: str) -> bool:
+        #TODO: sync changes with database
+        """
+            changes all labels from a category to the new label
+        Args:
+            old: old label
+            new: new label
+
+        Returns:
+            True if the changing was successful
+
+        Raises:
+            KeyError: If old is not a member of data.columns
+        """
+        if old not in self.data.columns:
+            raise KeyError('self.data has no column named: ' + old + '. Please make sure it exists.')
+        else:
+            self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
+        return True
