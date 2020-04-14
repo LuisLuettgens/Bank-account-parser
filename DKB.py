@@ -467,6 +467,7 @@ class DKB(base.BankAccount):
         database.sync()
         print(list(database.keys()))
         database.close()
+        self.load_keywords_from_db(self.database)
         return True
 
     def pop_category(self, category: str, path: str = '') -> bool:
@@ -486,4 +487,5 @@ class DKB(base.BankAccount):
         database.sync()
         print(list(database.keys()))
         database.close()
+        self.load_keywords_from_db(self.database)
         return True
