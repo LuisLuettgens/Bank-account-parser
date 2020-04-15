@@ -335,6 +335,7 @@ class DKB(base.BankAccount):
         Returns:
             True if the saving process was successful
         """
+
         self.data.to_csv(path,
                          sep=';',
                          quoting=int(True),
@@ -344,7 +345,14 @@ class DKB(base.BankAccount):
                          index=False,
                          decimal=',')
 
+        with open(path, "r", encoding='latin_1') as f:
+            lines = f.readlines()
 
+        with open(path, "w", encoding='latin_1') as f:
+            for line in self.meta_data_lines:
+                f.write(line)
+            for line in lines:
+                f.write(line)
 
         print('The data was successfully saved under this path:', path)
         return True
@@ -440,7 +448,33 @@ class DKB(base.BankAccount):
             KeyError: If old is not a member of data.columns
         """
         self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
+        self.load_keywords_from_db(self.database)
         return True
+
+    def load_keywords_from_db(self, path: str = '') -> None:
+        """
+        This function load a database from 'path' and it as a dictonary of dictonaries in self.db. The keys of self.db are the known categories.
+        furthermore three categories: 'Rent', 'None' and 'Private' added.
+
+        Args:
+            self: An object of the class DKB.
+            path: path to the database file (default = database.db)
+
+        Returns:
+            None
+        Raises:
+            ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
+        """
+        if path is '':
+            path = self.database
+        extensions = ['.bak', '.dat', '.dir']
+        if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
+            database = shelve.open(path)
+            self.db = dict(database)
+            self.categories = list(self.db.keys())
+            self.categories.extend(['Rent', 'None', 'Private'])
+        else:
+            raise ValueError('Could not find a file under the given path: ' + path)
 
     def add_category(self, category: str, path: str = '') -> bool:
         # TODO: looks like they are not working properly
@@ -460,7 +494,6 @@ class DKB(base.BankAccount):
         database.sync()
         print(list(database.keys()))
         database.close()
-        self.load_keywords_from_db(self.database)
         return True
 
     def pop_category(self, category: str, path: str = '') -> bool:
@@ -508,3 +541,35 @@ class DKB(base.BankAccount):
                 print(line)
                 f.write(line)
         f.close()
+
+    def change_category_in_db(self, old: str, new: str, path: str = '') -> None:
+        """
+        This function load a database from 'path' and it as a dictonary of dictonaries in self.db. The keys of self.db are the known categories.
+        furthermore three categories: 'Rent', 'None' and 'Private' added.
+
+        Args:
+            old:  old category label
+            new:  new category label
+            self: An object of the class DKB.
+            path: path to the database file (default = database.db)
+
+        Returns:
+            None
+        Raises:
+            ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
+        """
+        if path is '':
+            path = self.database
+        extensions = ['.bak', '.dat', '.dir']
+        if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
+            database = shelve.open(path)
+            database[new] = database[old]
+            self.categories = list(self.db.keys())
+            self.categories.extend(['Rent', 'None', 'Private'])
+            self.load_keywords_from_db()
+            self.change_category(old, new)
+            user_input = input('Do you want to delete the category: ' + old + '[y/n]')
+            if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
+                self.pop_category(old)
+        else:
+            raise ValueError('Could not find a file under the given path: ' + path)
