@@ -29,18 +29,18 @@ class DKB(base.BankAccount):
                  encoding='latin_1'):
         register_matplotlib_converters()
         print('')
-        self.data_latest_file = data_latest_file
+        self.encoding = encoding
+        self.data_latest_file = self.replace_german_umlauts(data_latest_file)
         self.data_other_files = other_data_files
         self.dfs = []
         self.get_meta_info()
         self.database = database
         self.load_keywords_from_db(self.database)
         self.pre_labeled = pre_labeled
-        self.encoding = encoding
         latest_data_file_compressed_path = self.erase_meta_data()
 
-        self.DKB_header_unlabeled_list = ['Buchungstag', 'Wertstellung', 'Buchungstext', 'Auftraggeber / Begünstigter',
-                                          'Verwendungszweck', 'Kontonummer', 'BLZ', 'Betrag (EUR)', 'Gläubiger-ID',
+        self.DKB_header_unlabeled_list = ['Buchungstag', 'Wertstellung', 'Buchungstext', 'Auftraggeber / Beguenstigter',
+                                          'Verwendungszweck', 'Kontonummer', 'BLZ', 'Betrag (EUR)', 'Glaeubiger-ID',
                                           'Mandatsreferenz', 'Kundenreferenz']
 
         self.DKB_header_labeled_list = self.DKB_header_unlabeled_list.copy()
@@ -148,18 +148,18 @@ class DKB(base.BankAccount):
         else:
             current_label = self.data.loc[row_idx, 'Transaction Label']
             self.data.loc[row_idx, 'Transaction Label'] = label
-            counterpart = self.data.loc[row_idx, 'Auftraggeber / Begünstigter']
+            counterpart = self.data.loc[row_idx, 'Auftraggeber / Beguenstigter']
             print('Changed the label from: ', current_label, 'to', label, '.')
             output = ' '.join(['Do you want to change all transactions with', counterpart, 'to', label, '?[y/n]\t'])
             user_input = input(output)
             if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
                 print('Changing all other labels accordingly...\t', end='')
-                for idx in self.data[self.data['Auftraggeber / Begünstigter'].str.contains(counterpart, case=False,
+                for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False,
                                                                                            na=False)].index:
                     self.data.loc[idx, 'Transaction Label'] = label
                 print('done!')
                 return self.data[
-                    self.data['Auftraggeber / Begünstigter'].str.contains(counterpart, case=False, na=False)]
+                    self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)]
             else:
                 return pd.DataFrame(self.data.iloc[row_idx]).T
 
@@ -176,6 +176,9 @@ class DKB(base.BankAccount):
             Returns the minimum of n and all possible rows without a transaction label as a DataFrame.          
        """
         none_entries = self.data[self.data['Transaction Label'] == 'None']
+        if none_entries.shape[0] == 0:
+            print('No more \'None\'-labeled entries left!')
+            return none_entries
         return none_entries.sample(n=min(n, none_entries.shape[0]))
 
     def prep_table(self, sort_by='Wertstellung', ascending=False) -> None:
@@ -251,14 +254,20 @@ class DKB(base.BankAccount):
             None
         """
         # TODO: this can cause an error, if no 'None' label is left
-        None_idx = list(self.data['Transaction Label'].value_counts().index).index('None')
-        transaction_label_values = self.data['Transaction Label'].value_counts().values[None_idx]
+        if 'None' not in self.data['Transaction Label'].value_counts().index:
+            print('In total', "{:.2f}".format(100), "% of all transactions have labels.")
+            if 'None' in self.categories:
+                self.categories.remove('None')
+            print('')
+        else:
+            None_idx = list(self.data['Transaction Label'].value_counts().index).index('None')
+            transaction_label_values = self.data['Transaction Label'].value_counts().values[None_idx]
 
-        print('In total',
-              "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100)
-              , "% of all transactions have labels.")
+            print('In total',
+                  "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100)
+                  , "% of all transactions have labels.")
 
-        print('')
+            print('')
 
     def get_category(self, category: str, start: datetime = None, end: datetime = None) -> pd.DataFrame:
         """
@@ -516,8 +525,15 @@ class DKB(base.BankAccount):
         database.close()
         self.load_keywords_from_db(self.database)
 
-    def replace_german_umlauts(self):
+    def replace_german_umlauts(self, path: str) -> str:
+        """
 
+        Args:
+            path:
+
+        Returns:
+
+        """
         chars = {'ö': 'oe',
                  'Ö': 'Oe',
                  'ä': 'ae',
@@ -527,7 +543,7 @@ class DKB(base.BankAccount):
                  'ß': 'ss'}
         lines = []
 
-        with open('1036976429_v4test.csv', "r", encoding=self.encoding) as f:
+        with open(path, "r", encoding=self.encoding) as f:
             lines_local = f.readlines()
 
             for line in lines_local:
@@ -536,11 +552,11 @@ class DKB(base.BankAccount):
                 lines.append(line)
             f.close()
 
-        with open('1036976429_v5test.csv', "w+", encoding='utf-8') as f:
+        with open(path.split('.')[0] + '_copy.csv', "w+", encoding='utf-8') as f:
             for line in lines:
-                print(line)
                 f.write(line)
         f.close()
+        return path.split('.')[0] + '_copy.csv'
 
     def change_category_in_db(self, old: str, new: str, path: str = '') -> None:
         """
