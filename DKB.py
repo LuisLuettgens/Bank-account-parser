@@ -28,7 +28,7 @@ class DKB(base.BankAccount):
                  data_latest_file: str,
                  pre_labeled: bool = False,
                  other_data_files: List[str] = [],
-                 database='database.db',
+                 database='database/database.db',
                  encoding='latin_1'):
         register_matplotlib_converters()
         print('')
