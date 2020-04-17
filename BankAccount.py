@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from IPython.core.display import display, HTML
 from pathlib import Path
 import functools
 import helper as helper
