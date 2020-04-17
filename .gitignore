@@ -9,6 +9,9 @@ __pycache__/
 # CSV extensions
 *.csv
 
+# vscode settings json
+settings.json
+
 # Distribution / packaging
 .Python
 build/
@@ -79,7 +82,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-.ipynb
+*.ipynb
 
 # IPython
 profile_default/
