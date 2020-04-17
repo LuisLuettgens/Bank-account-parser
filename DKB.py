@@ -8,7 +8,7 @@ Created on Fri Apr 10 12:52:19 2020
 import functools
 import os
 import shelve
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
 
@@ -18,6 +18,9 @@ from pandas.plotting import register_matplotlib_converters
 
 import BankAccount as base
 import helper as helper
+
+import matplotlib
+import matplotlib.pyplot as plt
 
 
 class DKB(base.BankAccount):
@@ -589,3 +592,129 @@ class DKB(base.BankAccount):
                 self.pop_category(old)
         else:
             raise ValueError('Could not find a file under the given path: ' + path)
+
+    def get_months(self, start_date, end_date, use_daily_table=True, use_Werstellung = True):
+        if use_Werstellung:
+            if use_daily_table:
+                return self.daily_data[(self.daily_data['Wertstellung'] >= start_date) &
+                                       (self.daily_data['Wertstellung'] <= end_date)]
+            else:
+                return self.data[(self.data['Wertstellung'] >= start_date) &
+                                 (self.data['Wertstellung'] <= end_date)]
+        else:
+            if use_daily_table:
+                return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
+                                       (self.daily_data['Buchungstag'] <= end_date)]
+            else:
+                return self.data[(self.data['Buchungstag'] >= start_date) &
+                                 (self.data['Buchungstag'] <= end_date)]            
+
+    def summary(self,start,end):
+        
+        # preparation
+        df       = self.get_months(start,end)
+        df_trans = self.get_months(start,end,use_daily_table=False)
+        
+        # Account balance & transactions
+        Wert   = df['Wertstellung']
+        Bal    = df['Balance']
+        Betrag = df['Betrag (EUR)']
+        
+        dates = list(Wert[0:-1:int(np.floor(len(Wert)/6))])
+        xlabels =[x.date().strftime('%Y-%m-%d') for x in dates]
+        
+        # Expenses per month plot
+        expenses, total_expenses = self.cluster_expenses(*self.total_expenses(df_trans))
+        
+        # Compare expenses to previous time period
+        diff = (end-start).days
+        
+        begin_prev_period = start - timedelta(days=diff+1)
+        end_prev_period   = start - timedelta(days=1)
+
+        pref_period_trans = self.get_months(begin_prev_period,end_prev_period,use_daily_table=False)
+        diff = self.trend_adjacent(df_trans,pref_period_trans)
+        
+        # Income vs. Expenses
+        total_salary = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] == 'Salary')].sum()['Betrag (EUR)']  
+        other_income = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] != 'Salary')].sum()['Betrag (EUR)']  
+        
+        category_names = ['Salary', 'Other income', 'Expenses']
+        results = {'': [total_salary, other_income, total_expenses]}
+
+        values = np.array(list(results.values()))
+        values_cum = values.cumsum(axis=1)
+        category_colors = plt.get_cmap('Blues')(
+        np.linspace(0.15, 0.85, values.shape[1]))
+        
+        # Create plots
+        nrows = 3
+        ncols = 2
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*10, nrows*10))
+        
+        # Accounts balance plot
+        axes[0,0].plot(Wert,Bal)
+        axes[0,0].set_xticklabels(xlabels, rotation=20)
+        axes[0,0].set_title("Account Balance")
+        axes[0,0].xaxis.set_major_locator(plt.MaxNLocator(6))
+
+        # Account transaction
+        axes[0,1].plot(Wert,Betrag)
+        axes[0,1].set_xticklabels(xlabels, rotation=20)
+        axes[0,1].set_title("Spendings")
+        axes[0,1].xaxis.set_major_locator(plt.MaxNLocator(6))
+
+        # Expenses per category
+        axes[1,0].pie(expenses.values(),labels=expenses.keys(), autopct='%1.1f%%',shadow=True, startangle=90)
+        axes[1,0].axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        axes[1,0].set_title("Expenses per category")
+        
+        # Compare with last period
+        axes[1,1].bar(diff.keys(),diff.values())
+        axes[1,1].axhline(y=0.0, color='k', linestyle='-')
+        axes[1,1].set_xticklabels(diff.keys(), rotation=60)
+        axes[1,1].set_title("Compare with last period")
+    
+        # Income versus expenses
+        axes[2,0].invert_yaxis()
+        axes[2,0].xaxis.set_visible(False)
+        axes[2,0].set_xlim(0, np.sum(values, axis=1).max())
+        
+        for i, (colname, color) in enumerate(zip(category_names, category_colors)):
+            widths = values[:, i]
+            starts = values_cum[:, i] - widths
+            axes[2,0].barh('', widths, left=starts, height=0.5,
+                    label=colname, color=color)
+            xcenters = starts + widths / 2
+    
+            r, g, b, _ = color
+            text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
+            for y, (x, c) in enumerate(zip(xcenters, widths)):
+                axes[2,0].text(x, y, str(int(c)) + '€', ha='center', va='center',
+                        color=text_color, fontsize='xx-large')
+                axes[2,0].legend(ncol=len(category_names), bbox_to_anchor=(0, 1), loc='lower left', fontsize='xx-large')
+    
+        # Set title
+        title = "".join(['Summay for period: ', start.date().strftime('%Y-%m-%d'), ' - ',end.date().strftime('%Y-%m-%d')])
+        fig.suptitle(title , fontsize=16)
+    
+    def summary_last_quater(self):
+        now = datetime.now()
+        last_year = now.year-1
+        prev_Q4_start = datetime(last_year,10,1,0,0,0)
+        Q1_start = datetime(now.year,1,1,0,0,0)
+        Q2_start = datetime(now.year,4,1,0,0,0)
+        Q3_start = datetime(now.year,7,1,0,0,0)
+        Q4_start = datetime(now.year,10,1,0,0,0)
+        
+        prev_Q4_end = Q1_start - timedelta(days=1)
+        Q1_end      = Q2_start - timedelta(days=1)
+        Q2_end      = Q3_start - timedelta(days=1)
+        Q3_end      = Q4_start - timedelta(days=1)
+        
+        quartals = [(prev_Q4_start,prev_Q4_end),
+                              (Q1_start,Q1_end),
+                              (Q2_start,Q2_end),
+                              (Q3_start,Q3_end)]
+        
+        return self.summary(*quartals[int((now.month-1)/3)])
