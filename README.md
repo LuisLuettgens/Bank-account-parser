@@ -115,7 +115,11 @@ Run the docker run command `sudo docker run -p 8888:8888 dkb_parser:1.0` again. 
 
 **Note:** The server is running on your local machine, thus your file is _uploaded_ via an intra-machine network from your OS to the docker image so it never leaves you're machine.
 
-Afterwards open the file: `DKB.ipynb` replace the string `/path/to/your.csv` with the acctual path to the previously downloaded csv file. Then execute the lines in order to get a feel for the capabilities of this tool.
+Afterwards open the file: `DKB.ipynb` replace the string `/path/to/your.csv` with the actual path to the previously downloaded csv file. Then execute the lines in order to get a feel for the capabilities of this tool.
+
+#### Jupyter
+
+When using Jupyter, all you need to do is to launch a Jupyter notebook and navigate to this git repository, then open the `DKB.ipynb` and replace the string `/path/to/your.csv` with the actual location of the previously downloaded csv file. Afterwards, you can execute the lines line by line to get a feel for the capabilities of this tool and to analyse your data.
 
 ## Authors
 
