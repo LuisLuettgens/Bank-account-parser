@@ -2,6 +2,8 @@
 
 This project allows you to analyse your monthly (or any other period) changes in your DKB (Deutsche Kreditbank) bank account.
 
+![Balance and spendings graph](./images/balance_spendings.png)
+![Expenses and trend graph](./images/expense_trend.png)
 
 ### Prerequisites
 
