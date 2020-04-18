@@ -123,6 +123,8 @@ When using Jupyter, all you need to do is to launch a Jupyter notebook and navig
 
 ![DKB Jupyter notebook](./images/DKB.png)
 
+## Known issues
+Within the docker container  the command `DKB.summary_last_quater()` the fifth plot causes an error.
 
 ## Authors
 
