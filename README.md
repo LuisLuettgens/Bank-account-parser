@@ -102,13 +102,9 @@ You should see the jupyter environment as shown below:
 This project was implemented using `python3.7` and follows `Google's Style` for documentation.
 
 
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
 ## Authors
 
 * **Luis Luettgens** - *Initial work*
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
