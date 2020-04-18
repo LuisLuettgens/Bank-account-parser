@@ -95,7 +95,7 @@ Follow the instructions and paste one of these URLs into your web browser or `ct
 
 You should see the jupyter environment as shown below:
 
-![Jupyter environment](/home/luis/Pictures/Jupyter-DKB.png)
+![Jupyter environment](./images/Jupyter-DKB.png)
 
 ### Coding style
 
