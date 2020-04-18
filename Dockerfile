@@ -14,4 +14,3 @@ RUN cd work && \
     git clone https://github.com/LuisLuettgens/DKB-bank-account-parser.git
 
 RUN chmod -R 777 work/DKB-bank-account-parser
-
