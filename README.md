@@ -101,6 +101,19 @@ You should see the jupyter environment as shown below:
 
 This project was implemented using `python3.7` and follows `Google's Style` for documentation.
 
+### Usage
+
+To use this tool, we have to feed it with some data. Therefore, you can download all transactions of the last three years from the DKB website. Navigate to Umsätze, choose the timeperiod and export the csv-file by clicking the downfacing arrow in the top right corner like in the image below.
+
+![Export csv file](./images/DKB_Account.png)
+
+#### Docker
+
+Run the docker run command `sudo docker run -p 8888:8888 dkb_parser:1.0` again. After you've open the link nagivate to `/work/DKB-bank-account-parser`. and press the Upload button in the top right corner, select the previously downloaded csv-file.
+
+**Note:** The server is running on your local machine, thus your file is _uploaded_ via an intra-machine network from your OS to the docker image so it never leaves you're machine.
+
+Afterwards open the file: `DKB.ipynb` replace the string `/path/to/your.csv` with the acctual path to the previously downloaded csv file. Then execute the lines in order to get a feel for the capabilities of this tool.
 
 ## Authors
 
