@@ -119,6 +119,9 @@ Afterward, open the file: `DKB.ipynb` and replace the string `/path/to/your.csv`
 
 When using Jupyter, all you need to do is to launch a Jupyter notebook and navigate to this git repository, then open the `DKB.ipynb` and replace the string `/path/to/your.csv` with the actual location of the previously downloaded csv file. Afterward, you can execute the lines line by line to get a feel for the capabilities of this tool and to analyze your data.
 
+![DKB Jupyter notebook](./images/DKB.png)
+
+
 ## Authors
 
 * **Luis Luettgens** - *Initial work*
