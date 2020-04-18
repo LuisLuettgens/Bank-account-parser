@@ -1,3 +1,5 @@
+# DKB bank account parser
+
 This project allows you to analyze your monthly (or any other period) changes in your DKB (Deutsche Kreditbank) bank account.
 
 ![Balance and spendings graph](./images/balance_spendings.png)
