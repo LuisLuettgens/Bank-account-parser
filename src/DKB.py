@@ -55,7 +55,7 @@ class DKB(base.BankAccount):
         col_types = {'Betrag (EUR)': np.float, 'Balance': np.float}
 
         self.date_format = '%d.%m.%Y'
-        date_parser_dkb = lambda x: pd.datetime.strptime(str(x), self.date_format)
+        date_parser_dkb = lambda x: datetime.strptime(str(x), self.date_format)
 
         self.has_transaction_label_col = False
         self.has_balance_col = False
