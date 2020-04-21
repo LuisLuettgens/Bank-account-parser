@@ -31,8 +31,8 @@ class DKB(base.BankAccount):
                  database='database/database.db',
                  encoding='latin_1'):
         register_matplotlib_converters()
+        super().__init__(encoding)
         print('')
-        self.encoding = encoding
         self.data_latest_file = self.replace_german_umlauts(data_latest_file)
         self.data_other_files = other_data_files
         self.dfs = []
@@ -527,39 +527,6 @@ class DKB(base.BankAccount):
         print(list(database.keys()))
         database.close()
         self.load_keywords_from_db(self.database)
-
-    def replace_german_umlauts(self, path: str) -> str:
-        """
-
-        Args:
-            path:
-
-        Returns:
-
-        """
-        chars = {'ö': 'oe',
-                 'Ö': 'Oe',
-                 'ä': 'ae',
-                 'Ä': 'Ae',
-                 'ü': 'ue',
-                 'Ü': 'Ue',
-                 'ß': 'ss'}
-        lines = []
-
-        with open(path, "r", encoding=self.encoding) as f:
-            lines_local = f.readlines()
-
-            for line in lines_local:
-                for char in chars:
-                    line = line.replace(char, chars[char])
-                lines.append(line)
-            f.close()
-
-        with open(path.split('.')[0] + '_copy.csv', "w+", encoding='utf-8') as f:
-            for line in lines:
-                f.write(line)
-        f.close()
-        return path.split('.')[0] + '_copy.csv'
 
     def change_category_in_db(self, old: str, new: str, path: str = '') -> None:
         """

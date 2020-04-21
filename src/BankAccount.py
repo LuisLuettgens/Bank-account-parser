@@ -19,7 +19,11 @@ from pandas.plotting import register_matplotlib_converters
 import shelve
 
 class BankAccount:
-    def __init__(self, data_latest_file, other_data_files = []):
+    def __init__(self,encoding):
+        print('Calling base class constructor')
+        self.encoding = encoding
+        
+        """
         register_matplotlib_converters()
         print('')
         self.data_latest_file  = data_latest_file
@@ -72,7 +76,41 @@ class BankAccount:
               "{:.2f}".format((1-transaction_label_vals/self.data['Transaction Label'].shape[0])*100),
               "% of all transactions have been labels.")
         print('')
-        
+        """
+
+    def replace_german_umlauts(self, path: str) -> str:
+        """
+
+        Args:
+            path:
+
+        Returns:
+
+        """
+        chars = {'ö': 'oe',
+                 'Ö': 'Oe',
+                 'ä': 'ae',
+                 'Ä': 'Ae',
+                 'ü': 'ue',
+                 'Ü': 'Ue',
+                 'ß': 'ss'}
+        lines = []
+
+        with open(path, "r", encoding=self.encoding) as f:
+            lines_local = f.readlines()
+
+            for line in lines_local:
+                for char in chars:
+                    line = line.replace(char, chars[char])
+                lines.append(line)
+            f.close()
+
+        with open(path.split('.')[0] + '_copy.csv', "w+", encoding='utf-8') as f:
+            for line in lines:
+                f.write(line)
+        f.close()
+        return path.split('.')[0] + '_copy.csv'
+    
     def get_data(self):
         return self.data
     
