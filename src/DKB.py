@@ -21,7 +21,7 @@ import helper as helper
 
 import matplotlib
 import matplotlib.pyplot as plt
-
+from dateutil.relativedelta import *
 
 class DKB(base.BankAccount):
     def __init__(self,
@@ -129,74 +129,20 @@ class DKB(base.BankAccount):
 
         del self.data['index']
 
-    def change_label(self, row_idx: int, label: str) -> pd.DataFrame:
-        """
-        This function allows you to change the label of an entry by hand based on the row index. After the entry was
-        changed you get asked whether all entries with the same 'Auftraggeber / Begünstigter' get the same label.
-        
-        Args:
-            self:    An object of the class DKB
-            row_idx: The index of the line which shall be changed
-            label:   The new label of that entry in the DataFrame
-            
-        Returns:
-            Shows all the rows that have been changed in the form of a DataFrame
-            
-        Raises:
-            ValueError: Raised when label is not a string found in self.categories.
-        """
-        if label not in self.categories:
-            raise ValueError(
-                'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
-        else:
-            current_label = self.data.loc[row_idx, 'Transaction Label']
-            self.data.loc[row_idx, 'Transaction Label'] = label
-            counterpart = self.data.loc[row_idx, 'Auftraggeber / Beguenstigter']
-            print('Changed the label from: ', current_label, 'to', label, '.')
-            output = ' '.join(['Do you want to change all transactions with', counterpart, 'to', label, '?[y/n]\t'])
-            user_input = input(output)
-            if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
-                print('Changing all other labels accordingly...\t', end='')
-                for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False,
-                                                                                           na=False)].index:
-                    self.data.loc[idx, 'Transaction Label'] = label
-                print('done!')
-                return self.data[
-                    self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)]
-            else:
-                return pd.DataFrame(self.data.iloc[row_idx]).T
-
-    def show_None(self, n: int = 5) -> pd.DataFrame:
-        """
-        This function returns a random sample from the DataFrame. All entries have 'None' as their 'Transaction Label'.
-        Use this function on combination with change_label_by_hand. 
-        
-        Args:
-            self: An object of the class DKB
-            n:    The number of returned entries (default = 5)
-            
-        Returns:
-            Returns the minimum of n and all possible rows without a transaction label as a DataFrame.          
-       """
-        none_entries = self.data[self.data['Transaction Label'] == 'None']
-        if none_entries.shape[0] == 0:
-            print('No more \'None\'-labeled entries left!')
-            return none_entries
-        return none_entries.sample(n=min(n, none_entries.shape[0]))
 
     def prep_table(self, sort_by='Wertstellung', ascending=False) -> None:
         """
         This function sorts self.data by the column with name sort_by. If the entries don't have a label a 'Transaction
         Label' column is added to self.data and calls self.add_balance_col
-        
+            
         Args:
             self:      An object of the class DKB
             sort_by:   Column name by which the table shall be sorted (default = 'Wertstellung')
             ascending: Sorting order (default= descending)
-            
+                
         Returns:
             None
-       """
+        """
         print('Sorting the table based on Wertstellung-column...\t', end='')
         self.data = self.data.sort_values(by=sort_by, ascending=ascending)
         self.data = self.data.reset_index()
@@ -642,25 +588,62 @@ class DKB(base.BankAccount):
         axes[1,1].set_xticklabels(diff.keys(), rotation=60)
         axes[1,1].set_title("Compare with last period")
     
-        # Income versus expenses
-        axes[2,0].invert_yaxis()
-        axes[2,0].xaxis.set_visible(False)
-        axes[2,0].set_xlim(0, np.sum(values, axis=1).max())
+        # Income vs Expenses
+        total_salary = self.data.loc[(self.data['Betrag (EUR)'] > 0) & (self.data['Transaction Label'] == 'Salary')]
+        other_income = self.data.loc[(self.data['Betrag (EUR)'] > 0) & (self.data['Transaction Label'] != 'Salary')]
+        expenses     = self.data.loc[(self.data['Betrag (EUR)'] < 0)]
+        first = min(self.data['Wertstellung'])
+        last  = max(self.data['Wertstellung'])
+        current = first
+        n_months = 1
+        while current < last:
+            n_months += 1
+            current += relativedelta(months=+1)
+
+
+        months = []
+        salary_slice = []
+        other_income_slice = []
+        expenses_slice = []
+
+        current_month = first.month
+        current_year  = first.year
+            
+
+        for i in range(n_months):
+            next_month = (current_month)%12+1
+            next_year = current_year
+            if next_month == 1:
+                next_year += 1
+            
+            from_date = datetime(current_year,current_month,1)
+            to_date = datetime(next_year,next_month,1)
+            
+            months.append(str(first.month) + '-' + str(first.year))
+            salary_slice.append(total_salary[(total_salary['Wertstellung']>=from_date)&
+                                            (total_salary['Wertstellung']<to_date)].sum()['Betrag (EUR)'])
+            
+            other_income_slice.append(other_income[(other_income['Wertstellung']>=from_date)&
+                                    (other_income['Wertstellung']<to_date)].sum()['Betrag (EUR)'])
+            
+            expenses_slice.append(expenses[(expenses['Wertstellung']>=from_date)&
+                                        (expenses['Wertstellung']<to_date)].sum()['Betrag (EUR)'])
+            
+            current_month = next_month
+            current_year  = next_year
+
+
+        N = n_months
+        ind = np.arange(N)    # the x locations for the groups
+        width = 0.35       # the width of the bars: can also be len(x) sequence
+
+        #fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
+                
+        axes[2,0].bar(ind, expenses_slice, width)
+        axes[2,0].bar(ind, salary_slice, width)
+        axes[2,0].bar(ind, other_income_slice, width,bottom=salary_slice)
+        plt.legend(['Expenses', 'Salary', 'Other Income'])
         
-        for i, (colname, color) in enumerate(zip(category_names, category_colors)):
-            widths = values[:, i]
-            starts = values_cum[:, i] - widths
-            axes[2,0].barh('', widths, left=starts, height=0.5,
-                    label=colname, color=color)
-            xcenters = starts + widths / 2
-    
-            r, g, b, _ = color
-            text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-            for y, (x, c) in enumerate(zip(xcenters, widths)):
-                axes[2,0].text(x, y, str(int(c)) + '€', ha='center', va='center',
-                        color=text_color, fontsize='xx-large')
-                axes[2,0].legend(ncol=len(category_names), bbox_to_anchor=(0, 1), loc='lower left', fontsize='xx-large')
-    
         # Set title
         title = "".join(['Summay for period: ', start.date().strftime('%Y-%m-%d'), ' - ',end.date().strftime('%Y-%m-%d')])
         fig.suptitle(title , fontsize=16)
