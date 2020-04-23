@@ -102,9 +102,8 @@ class DKB(base.BankAccount):
             print('Parsing file: ' + data_file + '...\t\t\t', end='')
             if not helper.is_valid_csv_file(data_file):
                 raise ValueError('The input file causes problems. Please input an other file...')
-            else:
-                self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding=self.encoding))
-                print('done!')
+            self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding=self.encoding))
+            print('done!')
 
         append_ignore_idx = functools.partial(pd.DataFrame.append, ignore_index=True)
 
@@ -246,9 +245,9 @@ class DKB(base.BankAccount):
         if category not in self.categories:
             raise ValueError(
                 'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
-        else:
-            df_trans = self.get_months(start, end, use_daily_table=False)
-            return df_trans[df_trans['Transaction Label'] == category]
+
+        df_trans = self.get_months(start, end, use_daily_table=False)
+        return df_trans[df_trans['Transaction Label'] == category]
 
     def load_keywords_from_db(self, path: str = '') -> None:
         """
@@ -264,7 +263,7 @@ class DKB(base.BankAccount):
         Raises:
             ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
         """
-        if path is '':
+        if path == '':
             path = self.database
         extensions = ['.bak', '.dat', '.dir']
         if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
@@ -332,7 +331,7 @@ class DKB(base.BankAccount):
 
         """
         print('Adding labels to transactions...\t\t\t', end='')
-        if path is '':
+        if path == '':
             path = self.database
         self.load_keywords_from_db(path)
         for idx, row in self.data.iterrows():
@@ -371,13 +370,13 @@ class DKB(base.BankAccount):
         if 'Betrag (EUR)' not in data.columns:
             raise KeyError(
                 'The input DataFrame has no column named: ' + 'Betrag (EUR)' + '. Please make sure it exists.')
-        else:
-            s = [self.current_balance]
-            for i, transaction in enumerate(data['Betrag (EUR)']):
-                s.append(s[i] - transaction)
-            del s[-1]
-            data['Balance'] = s
-            return data
+        
+        s = [self.current_balance]
+        for i, transaction in enumerate(data['Betrag (EUR)']):
+            s.append(s[i] - transaction)
+        del s[-1]
+        data['Balance'] = s
+        return data
 
     def get_row(self, idx: int) -> pd.DataFrame:
         """
@@ -423,7 +422,7 @@ class DKB(base.BankAccount):
         Raises:
             ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
         """
-        if path is '':
+        if path == '':
             path = self.database
         extensions = ['.bak', '.dat', '.dir']
         if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
@@ -445,7 +444,7 @@ class DKB(base.BankAccount):
                 Returns:
                     True if the deletion was successful
         """
-        if path is '':
+        if path == '':
             path = self.database
         database = shelve.open(path)
         database[category] = {}
@@ -465,7 +464,7 @@ class DKB(base.BankAccount):
         Returns:
             True if the deletion was successful
         """
-        if path is '':
+        if path == '':
             path = self.database
         database = shelve.open(path)
         database.pop(category, None)
@@ -490,7 +489,7 @@ class DKB(base.BankAccount):
         Raises:
             ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
         """
-        if path is '':
+        if path == '':
             path = self.database
         extensions = ['.bak', '.dat', '.dir']
         if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
@@ -511,16 +510,16 @@ class DKB(base.BankAccount):
             if use_daily_table:
                 return self.daily_data[(self.daily_data['Wertstellung'] >= start_date) &
                                        (self.daily_data['Wertstellung'] <= end_date)]
-            else:
-                return self.data[(self.data['Wertstellung'] >= start_date) &
-                                 (self.data['Wertstellung'] <= end_date)]
+        
+            return self.data[(self.data['Wertstellung'] >= start_date) &
+                             (self.data['Wertstellung'] <= end_date)]
         else:
             if use_daily_table:
                 return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
                                        (self.daily_data['Buchungstag'] <= end_date)]
-            else:
-                return self.data[(self.data['Buchungstag'] >= start_date) &
-                                 (self.data['Buchungstag'] <= end_date)]            
+            
+            return self.data[(self.data['Buchungstag'] >= start_date) &
+                             (self.data['Buchungstag'] <= end_date)]            
 
     def summary(self,start,end):
         
