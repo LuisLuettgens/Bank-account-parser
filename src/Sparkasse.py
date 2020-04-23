@@ -62,5 +62,3 @@ class Sparkasse(base.BankAccount):
                         'Kontonummer/IBAN' :                    'Kontonummer',
                         'Betrag' :                              'Betrag (EUR)'}
                         , inplace=True)
-
-      
