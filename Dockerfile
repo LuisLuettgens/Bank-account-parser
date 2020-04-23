@@ -4,7 +4,7 @@ USER root
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get install -y git-all \
+RUN apt-get update && apt-get install -y --no-install-recommends git-all \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
