@@ -6,5 +6,5 @@ Created on Fri Apr 10 12:56:07 2020
 """
 
 import BankAccount as BankAccount
-from DKB import *
-from Sparkasse import *
+from DKB import DKB
+from Sparkasse import Sparkasse

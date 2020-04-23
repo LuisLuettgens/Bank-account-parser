@@ -17,66 +17,13 @@ import functools
 import helper as helper
 from pandas.plotting import register_matplotlib_converters
 import shelve
+from dateutil.relativedelta import relativedelta
+
 
 class BankAccount:
     def __init__(self,encoding):
         print('Calling base class constructor')
         self.encoding = encoding
-        
-        """
-        register_matplotlib_converters()
-        print('')
-        self.data_latest_file  = data_latest_file
-        self.data_other_files  = other_data_files
-        self.dfs               = []
-        print('Generating meta data...\t\t\t\t\t', end='')
-        self.meta_data_lines   = ''
-        self.meta_data         = self.get_meta_info(self.data_latest_file)
-        self.current_balance   = float(self.meta_data['Balance'].replace('.','').replace(',','.'))
-        self.currency          = self.meta_data['Currency']
-        self.bank_account_type = self.meta_data['BA_type']
-        self.IBAN              = self.meta_data['IBAN']
-        print('done!')
-        self.categories        = ['Groceries', 'Dining', 'Amazon', 'Rent', 'Mobil phone /\n Internet', 'Culture',
-                                 'Travel', 'Credit card',  'Fuel', 'Insurance', 'EoQ', 'Pharmacy', 'None']
-                
-        latest_data_file_compressed_path = self.erase_meta_data()
-        self.dfs.append(pd.read_csv(latest_data_file_compressed_path,delimiter=';', encoding ='latin-1'))
-        os.remove(latest_data_file_compressed_path)
-        
-        for data_file in self.data_other_files:
-            print('Parsing file: ' + data_file +'...\t\t\t', end='')
-            if not is_valid_csv_file(data_file):
-                raise ValueError('The input file causes problems. Please input an other file...')
-            else:
-                self.dfs.append(pd.read_csv(erase_meta_data(data_file),delimiter=';', encoding ='latin-1'))
-                print('done!')
-        
-        append_ignore_idx = functools.partial(pd.DataFrame.append,ignore_index=True)
-        
-        self.data = functools.reduce(append_ignore_idx,self.dfs)
-        self.data = valid_table(self.data,self.current_balance)
-        
-        self.daily_data = self.data[['Wertstellung','Betrag (EUR)']].groupby('Wertstellung').sum().reset_index()
-        self.daily_data = helper.add_balance_col(self.daily_data, self.current_balance)
-        
-        print('Updatig daily transactions...\t\t\t\t', end='')
-        self.daily_data = self.update_daily()
-        print('done!')
-        print('Deleting unnamed column...\t\t\t\t', end='')
-        del self.data['Unnamed: 11']
-        print('done!')
-        print('Adding labels to transactions...\t\t\t', end='')
-        self.label_row()
-        print('done!')
-        print('')
-        None_idx = self.data['Transaction Label'].value_counts().index.to_list().index('None')
-        transaction_label_vals = self.data['Transaction Label'].value_counts().values[None_idx]       
-        print('In total',
-              "{:.2f}".format((1-transaction_label_vals/self.data['Transaction Label'].shape[0])*100),
-              "% of all transactions have been labels.")
-        print('')
-        """
 
     def replace_german_umlauts(self, path: str) -> str:
         """
@@ -124,14 +71,14 @@ class BankAccount:
                                        (self.daily_data['Wertstellung'] <= end_date)]
             
             return self.data[(self.data['Wertstellung'] >= start_date) &
-                                 (self.data['Wertstellung'] <= end_date)]
-        else:
-            if use_daily_table:
-                return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
-                                       (self.daily_data['Buchungstag'] <= end_date)]
+                             (self.data['Wertstellung'] <= end_date)]
+
+        if use_daily_table:
+            return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
+                                   (self.daily_data['Buchungstag'] <= end_date)]
     
-            return self.data[(self.data['Buchungstag'] >= start_date) &
-                                 (self.data['Buchungstag'] <= end_date)]
+        return self.data[(self.data['Buchungstag'] >= start_date) &
+                         (self.data['Buchungstag'] <= end_date)]
                 
     def last_month(self):
         return self.get_months(n_months_back(1),datetime.now(),use_daily_table=False)
@@ -143,6 +90,7 @@ class BankAccount:
     def last_quater(self,use_daily_table=True):
         return self.get_months(n_months_back(3),datetime.now(),use_daily_table)
     
+
     def summary(self,start,end):
         
         # preparation
@@ -154,7 +102,7 @@ class BankAccount:
         Bal    = df['Balance']
         Betrag = df['Betrag (EUR)']
         
-        dates  = list(Wert[0:-1:int(np.floor(len(Wert)/6))])
+        dates = list(Wert[0:-1:int(np.floor(len(Wert)/6))])
         xlabels =[x.date().strftime('%Y-%m-%d') for x in dates]
         
         # Expenses per month plot
@@ -176,10 +124,10 @@ class BankAccount:
         category_names = ['Salary', 'Other income', 'Expenses']
         results = {'': [total_salary, other_income, total_expenses]}
 
-        data = np.array(list(results.values()))
-        data_cum = data.cumsum(axis=1)
+        values = np.array(list(results.values()))
+        values_cum = values.cumsum(axis=1)
         category_colors = plt.get_cmap('Blues')(
-        np.linspace(0.15, 0.85, data.shape[1]))
+        np.linspace(0.15, 0.85, values.shape[1]))
         
         # Create plots
         nrows = 3
@@ -189,13 +137,16 @@ class BankAccount:
         # Accounts balance plot
         axes[0,0].plot(Wert,Bal)
         axes[0,0].set_xticklabels(xlabels, rotation=20)
-        axes[0,0].set_title("Account Balance")
-        
+        axes[0,0].set_title("Temporal progression of the account balance")
+        axes[0,0].set_ylabel("EUR")
+        axes[0,0].xaxis.set_major_locator(plt.MaxNLocator(6))
+
         # Account transaction
         axes[0,1].plot(Wert,Betrag)
         axes[0,1].set_xticklabels(xlabels, rotation=20)
-        axes[0,1].set_title("Spendings")
-
+        axes[0,1].set_title("Temporal progression of transactions")
+        axes[0,1].set_ylabel("EUR")
+        
         # Expenses per category
         axes[1,0].pie(expenses.values(),labels=expenses.keys(), autopct='%1.1f%%',shadow=True, startangle=90)
         axes[1,0].axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
@@ -204,28 +155,75 @@ class BankAccount:
         # Compare with last period
         axes[1,1].bar(diff.keys(),diff.values())
         axes[1,1].axhline(y=0.0, color='k', linestyle='-')
-        axes[1,1].set_xticklabels(diff.keys(), rotation=60)
-        axes[1,1].set_title("Compare with last period")
+        axes[1,1].set_xticklabels(diff.keys(), rotation=90)
+        axes[1,1].set_ylabel('EUR')
+        axes[1,1].set_title("Change in spent capital per category")
     
-        # Income versus expenses
-        axes[2,0].invert_yaxis()
-        axes[2,0].xaxis.set_visible(False)
-        axes[2,0].set_xlim(0, np.sum(data, axis=1).max())
+        # Income vs Expenses
+        total_salary = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] == 'Salary')]
+        other_income = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] != 'Salary')]
+        expenses     = df_trans.loc[(df_trans['Betrag (EUR)'] < 0)]
         
-        for i, (colname, color) in enumerate(zip(category_names, category_colors)):
-            widths = data[:, i]
-            starts = data_cum[:, i] - widths
-            axes[2,0].barh('', widths, left=starts, height=0.5,
-                    label=colname, color=color)
-            xcenters = starts + widths / 2
-    
-            r, g, b, _ = color
-            text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-            for y, (x, c) in enumerate(zip(xcenters, widths)):
-                axes[2,0].text(x, y, str(int(c)) + '€', ha='center', va='center',
-                        color=text_color, fontsize='xx-large')
-                axes[2,0].legend(ncol=len(category_names), bbox_to_anchor=(0, 1), loc='lower left', fontsize='xx-large')
-    
+        first = min(df_trans['Wertstellung'])
+        last  = max(df_trans['Wertstellung'])
+        
+        current = first
+        n_months = 0
+        while current < last:
+            n_months += 1
+            current += relativedelta(months=+1)
+
+
+        months = []
+        salary_slice = []
+        other_income_slice = []
+        expenses_slice = []
+
+        current_month = first.month
+        current_year  = first.year
+
+        xlabels_dates = ['']
+
+        for i in range(n_months):
+            xlabels_dates.append(str(current_month)+'-'+str(current_year))
+
+            next_month = (current_month)%12+1
+            next_year = current_year
+            if next_month == 1:
+                next_year += 1  
+
+            from_date = datetime(current_year,current_month,1)
+            to_date = datetime(next_year,next_month,1)
+            
+            months.append(str(first.month) + '-' + str(first.year))
+            salary_slice.append(total_salary[(total_salary['Wertstellung']>=from_date)&
+                                            (total_salary['Wertstellung']<to_date)].sum()['Betrag (EUR)'])
+            
+            other_income_slice.append(other_income[(other_income['Wertstellung']>=from_date)&
+                                    (other_income['Wertstellung']<to_date)].sum()['Betrag (EUR)'])
+            
+            expenses_slice.append(expenses[(expenses['Wertstellung']>=from_date)&
+                                        (expenses['Wertstellung']<to_date)].sum()['Betrag (EUR)'])
+            
+            current_month = next_month
+            current_year  = next_year
+
+        N = n_months
+        ind = np.arange(N)    # the x locations for the groups
+        width = 0.35       # the width of the bars: can also be len(x) sequence
+
+        #fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
+                
+        axes[2,0].bar(ind, expenses_slice, width)
+        axes[2,0].bar(ind, salary_slice, width)
+        axes[2,0].bar(ind, other_income_slice, width,bottom=salary_slice)
+        axes[2,0].axhline(0, color='black')
+        axes[2,0].set_title("Income vs. expenses per month")
+        axes[2,0].set_ylabel('EUR')
+        axes[2,0].xaxis.set_major_locator(plt.MaxNLocator(len(xlabels_dates)-1))
+        axes[2,0].set_xticklabels(xlabels_dates)
+        plt.legend(['Expenses', 'Salary', 'Other Income'])
+        
         # Set title
         title = "".join(['Summay for period: ', start.date().strftime('%Y-%m-%d'), ' - ',end.date().strftime('%Y-%m-%d')])
         fig.suptitle(title , fontsize=16)
