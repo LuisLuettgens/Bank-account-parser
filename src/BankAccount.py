@@ -122,15 +122,15 @@ class BankAccount:
             if use_daily_table:
                 return self.daily_data[(self.daily_data['Wertstellung'] >= start_date) &
                                        (self.daily_data['Wertstellung'] <= end_date)]
-            else:
-                return self.data[(self.data['Wertstellung'] >= start_date) &
+            
+            return self.data[(self.data['Wertstellung'] >= start_date) &
                                  (self.data['Wertstellung'] <= end_date)]
         else:
             if use_daily_table:
                 return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
                                        (self.daily_data['Buchungstag'] <= end_date)]
-            else:
-                return self.data[(self.data['Buchungstag'] >= start_date) &
+    
+            return self.data[(self.data['Buchungstag'] >= start_date) &
                                  (self.data['Buchungstag'] <= end_date)]
                 
     def last_month(self):
@@ -273,7 +273,7 @@ class BankAccount:
             df.loc[idx,'Balance']      = BALANCE
                 
         for idx, row in df.iterrows():
-            if row['Balance'] == None:
+            if row['Balance'] is None:
                 df.loc[idx,'Balance'] = df.loc[idx-1,'Balance']
         print('done!')
         return df
@@ -320,9 +320,9 @@ class BankAccount:
             for i, cat in enumerate(self.categories):
                 print(i,': ', cat)
             return False
-        else:
-            df_trans = self.get_months(start,end,use_daily_table=False)
-            return df_trans[df_trans['Transaction Label'] == category]
+    
+        df_trans = self.get_months(start,end,use_daily_table=False)
+        return df_trans[df_trans['Transaction Label'] == category]
     
     def trend_adjacent(self,df1, df2):
         # assuming they are actually adjacent

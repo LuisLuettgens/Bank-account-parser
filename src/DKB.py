@@ -21,7 +21,7 @@ import helper as helper
 
 import matplotlib
 import matplotlib.pyplot as plt
-from dateutil.relativedelta import *
+from dateutil.relativedelta import relativedelta
 
 class DKB(base.BankAccount):
     def __init__(self,
@@ -513,12 +513,11 @@ class DKB(base.BankAccount):
         
             return self.data[(self.data['Wertstellung'] >= start_date) &
                              (self.data['Wertstellung'] <= end_date)]
-        else:
-            if use_daily_table:
-                return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
+        if use_daily_table:
+            return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
                                        (self.daily_data['Buchungstag'] <= end_date)]
             
-            return self.data[(self.data['Buchungstag'] >= start_date) &
+        return self.data[(self.data['Buchungstag'] >= start_date) &
                              (self.data['Buchungstag'] <= end_date)]            
 
     def summary(self,start,end):
