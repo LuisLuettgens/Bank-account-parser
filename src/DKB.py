@@ -566,15 +566,16 @@ class DKB(base.BankAccount):
         # Accounts balance plot
         axes[0,0].plot(Wert,Bal)
         axes[0,0].set_xticklabels(xlabels, rotation=20)
-        axes[0,0].set_title("Account Balance")
+        axes[0,0].set_title("Temporal progression of the account balance")
+        axes[0,0].set_ylabel("EUR")
         axes[0,0].xaxis.set_major_locator(plt.MaxNLocator(6))
 
         # Account transaction
         axes[0,1].plot(Wert,Betrag)
         axes[0,1].set_xticklabels(xlabels, rotation=20)
-        axes[0,1].set_title("Spendings")
-        axes[0,1].xaxis.set_major_locator(plt.MaxNLocator(6))
-
+        axes[0,1].set_title("Temporal progression of transactions")
+        axes[0,1].set_ylabel("EUR")
+        
         # Expenses per category
         axes[1,0].pie(expenses.values(),labels=expenses.keys(), autopct='%1.1f%%',shadow=True, startangle=90)
         axes[1,0].axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
@@ -583,17 +584,20 @@ class DKB(base.BankAccount):
         # Compare with last period
         axes[1,1].bar(diff.keys(),diff.values())
         axes[1,1].axhline(y=0.0, color='k', linestyle='-')
-        axes[1,1].set_xticklabels(diff.keys(), rotation=60)
-        axes[1,1].set_title("Compare with last period")
+        axes[1,1].set_xticklabels(diff.keys(), rotation=90)
+        axes[1,1].set_ylabel('EUR')
+        axes[1,1].set_title("Change in spent capital per category")
     
         # Income vs Expenses
-        total_salary = self.data.loc[(self.data['Betrag (EUR)'] > 0) & (self.data['Transaction Label'] == 'Salary')]
-        other_income = self.data.loc[(self.data['Betrag (EUR)'] > 0) & (self.data['Transaction Label'] != 'Salary')]
-        expenses     = self.data.loc[(self.data['Betrag (EUR)'] < 0)]
-        first = min(self.data['Wertstellung'])
-        last  = max(self.data['Wertstellung'])
+        total_salary = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] == 'Salary')]
+        other_income = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] != 'Salary')]
+        expenses     = df_trans.loc[(df_trans['Betrag (EUR)'] < 0)]
+        
+        first = min(df_trans['Wertstellung'])
+        last  = max(df_trans['Wertstellung'])
+        
         current = first
-        n_months = 1
+        n_months = 0
         while current < last:
             n_months += 1
             current += relativedelta(months=+1)
@@ -606,14 +610,17 @@ class DKB(base.BankAccount):
 
         current_month = first.month
         current_year  = first.year
-            
+
+        xlabels_dates = ['']
 
         for i in range(n_months):
+            xlabels_dates.append(str(current_month)+'-'+str(current_year))
+
             next_month = (current_month)%12+1
             next_year = current_year
             if next_month == 1:
-                next_year += 1
-            
+                next_year += 1  
+
             from_date = datetime(current_year,current_month,1)
             to_date = datetime(next_year,next_month,1)
             
@@ -630,7 +637,6 @@ class DKB(base.BankAccount):
             current_month = next_month
             current_year  = next_year
 
-
         N = n_months
         ind = np.arange(N)    # the x locations for the groups
         width = 0.35       # the width of the bars: can also be len(x) sequence
@@ -640,6 +646,11 @@ class DKB(base.BankAccount):
         axes[2,0].bar(ind, expenses_slice, width)
         axes[2,0].bar(ind, salary_slice, width)
         axes[2,0].bar(ind, other_income_slice, width,bottom=salary_slice)
+        axes[2,0].axhline(0, color='black')
+        axes[2,0].set_title("Income vs. expenses per month")
+        axes[2,0].set_ylabel('EUR')
+        axes[2,0].xaxis.set_major_locator(plt.MaxNLocator(len(xlabels_dates)-1))
+        axes[2,0].set_xticklabels(xlabels_dates)
         plt.legend(['Expenses', 'Salary', 'Other Income'])
         
         # Set title
