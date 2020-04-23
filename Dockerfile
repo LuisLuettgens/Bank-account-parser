@@ -13,4 +13,6 @@ RUN usermod -aG sudo jovyan
 RUN cd work && \
     git clone https://github.com/LuisLuettgens/Bank-account-parser.git
 
-RUN chmod -R 777 work/DKB-bank-account-parser
+RUN chmod -R 777 work/Bank-account-parser
+
+USER jovyan
