@@ -1,0 +1,7 @@
+- name: wemake-python-styleguide
+  uses: wemake-services/wemake-python-styleguide@0.14.0
+  with:
+    # Path or space-separated list of paths to lint
+    path: # optional, default is .
+    # How would you like the results to be displayed?
+    reporter: # optional, default is terminal
