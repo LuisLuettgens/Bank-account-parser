@@ -39,7 +39,7 @@ class Sparkasse(base.BankAccount):
                                           'Betrag'}
  
        
-
+        # set type of column 'Betrag' to np. float 
         col_types = {'Betrag': np.float}
 
 
