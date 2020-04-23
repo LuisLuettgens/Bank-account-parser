@@ -201,7 +201,7 @@ class DKB(base.BankAccount):
         Returns:
             None
         """
-        # TODO: this can cause an error, if no 'None' label is left
+        
         if 'None' not in self.data['Transaction Label'].value_counts().index:
             print('In total', "{:.2f}".format(100), "% of all transactions have labels.")
             if 'None' in self.categories:
