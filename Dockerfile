@@ -4,9 +4,9 @@ USER root
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update
-
-RUN apt-get install -y git-all
+RUN apt-get update && apt-get install -y git-all \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN usermod -aG sudo jovyan
 
