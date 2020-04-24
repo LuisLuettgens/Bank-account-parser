@@ -20,6 +20,8 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
+    - name: Set PYTHON PATH 
+      run: echo "::set-env name=PYTHONPATH::home/runner/work/Bank-account-parser/src"
     - name: Test with pytest
       run: |
         pip install pytest
