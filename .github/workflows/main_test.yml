@@ -21,7 +21,9 @@ jobs:
       with:
         python-version: 3.7
     - name: Set PYTHON PATH 
-      run: echo "::set-env name=PYTHONPATH::home/runner/work/Bank-account-parser/src"
+      run: |
+        echo "::set-env name=PYTHONPATH::home/runner/work/Bank-account-parser/src"
+        echo "$PYTHONPATH"
     - name: Test with pytest
       run: |
         pip install pytest
