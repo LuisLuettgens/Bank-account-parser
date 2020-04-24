@@ -25,5 +25,8 @@ jobs:
         PYTHONPATH: "home/runner/work/Bank-account-parser/src"
       run: |
         echo "$PYTHONPATH"
+        pip install pandas
+        pip install DateTime
+        pip install Random
         pip install pytest
         pytest
