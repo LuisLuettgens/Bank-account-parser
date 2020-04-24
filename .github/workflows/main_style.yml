@@ -22,7 +22,7 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    # Run python style guide 
+    # Run python style guide
     - name: wemake-python-styleguide
       uses: wemake-services/wemake-python-styleguide@0.14.0
       with:
