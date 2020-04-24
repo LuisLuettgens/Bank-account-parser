@@ -102,6 +102,7 @@ class BankAccount:
         Bal    = df['Balance']
         Betrag = df['Betrag (EUR)']
         
+        #TODO divided by zero wgen len wert smaller than 6
         dates = list(Wert[0:-1:int(np.floor(len(Wert)/6))])
         xlabels =[x.date().strftime('%Y-%m-%d') for x in dates]
         
@@ -414,4 +415,58 @@ class BankAccount:
         self.bank_account_type = self.meta_data['BA_type']
         self.IBAN              = self.meta_data['IBAN']
         print('done!')
+    
+    def show_None(self, n: int = 5) -> pd.DataFrame:
+        """
+        This function returns a random sample from the DataFrame. All entries have 'None' as their 'Transaction Label'.
+        Use this function on combination with change_label_by_hand. 
         
+        Args:
+            self: An object of the class DKB
+            n:    The number of returned entries (default = 5)
+            
+        Returns:
+            Returns the minimum of n and all possible rows without a transaction label as a DataFrame.          
+       """
+        none_entries = self.data[self.data['Transaction Label'] == 'None']
+        if none_entries.shape[0] == 0:
+            print('No more \'None\'-labeled entries left!')
+            return none_entries
+        return none_entries.sample(n=min(n, none_entries.shape[0]))
+    
+    def change_label(self, row_idx: int, label: str) -> pd.DataFrame:
+        """
+        This function allows you to change the label of an entry by hand based on the row index. After the entry was
+        changed you get asked whether all entries with the same 'Auftraggeber / Begünstigter' get the same label.
+        
+        Args:
+            self:    An object of the class DKB
+            row_idx: The index of the line which shall be changed
+            label:   The new label of that entry in the DataFrame
+            
+        Returns:
+            Shows all the rows that have been changed in the form of a DataFrame
+            
+        Raises:
+            ValueError: Raised when label is not a string found in self.categories.
+        """
+        if label not in self.categories:
+            raise ValueError(
+                'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
+        else:
+            current_label = self.data.loc[row_idx, 'Transaction Label']
+            self.data.loc[row_idx, 'Transaction Label'] = label
+            counterpart = self.data.loc[row_idx, 'Auftraggeber / Beguenstigter']
+            print('Changed the label from: ', current_label, 'to', label, '.')
+            output = ' '.join(['Do you want to change all transactions with', counterpart, 'to', label, '?[y/n]\t'])
+            user_input = input(output)
+            if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
+                print('Changing all other labels accordingly...\t', end='')
+                for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False,
+                                                                                           na=False)].index:
+                    self.data.loc[idx, 'Transaction Label'] = label
+                print('done!')
+                return self.data[
+                    self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)]
+            else:
+                return pd.DataFrame(self.data.iloc[row_idx]).T
