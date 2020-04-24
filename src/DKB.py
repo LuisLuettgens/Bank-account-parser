@@ -100,8 +100,7 @@ class DKB(base.BankAccount):
 
         for data_file in self.data_other_files:
             print('Parsing file: ' + data_file + '...\t\t\t', end='')
-            if not helper.is_valid_csv_file(data_file):
-                raise ValueError('The input file causes problems. Please input an other file...')
+            helper.is_valid_csv_file(data_file)
             self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding=self.encoding))
             print('done!')
 

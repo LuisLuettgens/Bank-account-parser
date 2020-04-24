@@ -257,7 +257,7 @@ class BankAccount:
         end_date   = max(daily_wertstellung)
         days = helper.generate_days(start_date, end_date)
         df = pd.DataFrame({'Wertstellung': [], 'Betrag (EUR)': [], 'Balance': []})
-    
+
         for day in days:
             s = pd.Series({'Wertstellung': day, 'Betrag (EUR)': 0, 'Balance': None})
             df = df.append(s,ignore_index=True)

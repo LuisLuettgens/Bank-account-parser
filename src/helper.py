@@ -17,7 +17,7 @@ def is_rent(df: pd.DataFrame) -> pd.DataFrame:
         as a DataFrame
     """
     return (df['Verwendungszweck'].str.contains('Miet', case=False, na=False) &
-            (df['Buchungstext'].str.contains('Gutschrift', case=False, na=False) is False))
+           (df['Buchungstext'].str.contains('Gutschrift', case=False, na=False) is False))
 
 
 def generate_days(first: datetime, last: datetime) -> List[datetime]:
@@ -34,7 +34,7 @@ def generate_days(first: datetime, last: datetime) -> List[datetime]:
     last += timedelta(days=1)
     result = []
     while first < last:
-        result.append(pd.Timestamp(first.strftime('%Y-%m-%d %H:%M:%S')))
+        result.append(pd.Timestamp(first.strftime('%Y-%m-%d')))
         first += step
     return result
 
@@ -44,22 +44,19 @@ def is_valid_csv_file(path: str) -> bool:
     checks if path can be resolved into a csv file.
     Args:
         path: location that is checked
-import pandas as pd
 
     Returns:
         True if path can be resolved to a csv-file, False otherwise
     """
+    
+    # Check if path destination can be resolved into a file
     my_file = Path(path)
     if not my_file.is_file():
-        user_input = input(
-            'The path: ' + path + ' cannot be resolved to a valid file. Do you want to continue anyways? [y/n]... ')
-        if user_input not in ['y', 'Y', 'yes', 'ja', 'Ja']:
-            return False
-    else:
-        pattern = r'\.csv$'
-        if re.search(pattern, path) is None:
-            user_input = input('The passed file does not appear to be a csv file. Do you want to continue anyways? ['
-                               'y/n]... ')
-            if user_input not in ['y', 'Y', 'yes', 'ja', 'Ja']:
-                return False
+        raise ValueError('The path: ' + path + ' cannot be resolved to a valid file. Please check the input path.')
+    
+    # Check if the file is a csv-file
+    pattern = r'\.csv$'
+    if re.search(pattern, path,re.IGNORECASE) is None:
+        raise ValueError('The passed file does not appear to be a csv file. Please check the file-suffix.')
+    
     return True
