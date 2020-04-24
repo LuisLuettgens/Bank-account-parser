@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/runner/work/Bank-account-parser/Bank-account-parser/src')
+
 import helper
 from datetime import datetime, timedelta
 import pandas as pd
