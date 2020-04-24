@@ -27,6 +27,5 @@ jobs:
         echo "$PYTHONPATH"
         pip install pandas
         pip install DateTime
-        pip install Random
         pip install pytest
         pytest
