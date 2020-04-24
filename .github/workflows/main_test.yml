@@ -22,13 +22,10 @@ jobs:
         python-version: 3.7
     - name: Test with pytest
       env:
-        PYTHONPATH: >
-                    "/home/runner/work/Bank-account-parser/Bank-account-parser/src:
-                    /home/runner/work/Bank-account-parser/Bank-account-parser/src/utils:
-                    /home/runner/work/Bank-account-parser/Bank-account-parser/src/plotting:
-                    /home/runner/work/Bank-account-parser/Bank-account-parser/src/bankaccounts:
-                    /home/runner/work/Bank-account-parser/Bank-account-parser/src/tests"
+        PYTHONPATH: "/home/runner/work/Bank-account-parser/Bank-account-parser/src"
       run: |
+        PYTHONPATH="$PYTHONPATH:/home/runner/work/Bank-account-parser/Bank-account-parser/src/utils"
+        export PYTHONPATH
         echo "$PYTHONPATH"
         pip install pandas
         pip install DateTime
