@@ -25,5 +25,5 @@ jobs:
     # Run python style guide 
     - name: wemake-python-styleguide
       uses: wemake-services/wemake-python-styleguide@0.14.0
-      with: 
+      with:
         path: src/*.py
