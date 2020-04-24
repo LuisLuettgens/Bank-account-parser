@@ -24,6 +24,9 @@ jobs:
       env:
         PYTHONPATH: "/home/runner/work/Bank-account-parser/Bank-account-parser/src"
       run: |
+        PYTHONPATH="$PYTHONPATH:/home/runner/work/Bank-account-parser/Bank-account-parser/src/tests"
+        PYTHONPATH="$PYTHONPATH:/home/runner/work/Bank-account-parser/Bank-account-parser/src/bankaccounts"
+        PYTHONPATH="$PYTHONPATH:/home/runner/work/Bank-account-parser/Bank-account-parser/src/plotting"
         PYTHONPATH="$PYTHONPATH:/home/runner/work/Bank-account-parser/Bank-account-parser/src/utils"
         export PYTHONPATH
         echo "$PYTHONPATH"
