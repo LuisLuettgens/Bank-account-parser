@@ -23,6 +23,7 @@ jobs:
     - name: Test with pytest
       env:
         PYTHONPATH: "/home/runner/work/Bank-account-parser/Bank-account-parser/src"
+        PYTHONPATH: PYTHONPATH:"/home/runner/work/Bank-account-parser/Bank-account-parser/src/utils"
       run: |
         echo "$PYTHONPATH"
         pip install pandas
