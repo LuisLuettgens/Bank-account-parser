@@ -27,20 +27,16 @@ class BankAccount:
 
     def replace_german_umlauts(self, path: str) -> str:
         """
+        Creates a new file that is a copy of path, but  all occurences of german umlauts habe been replaced.
 
         Args:
-            path:
+            path: path to the file
 
         Returns:
+            A string to the copy
 
         """
-        chars = {'ö': 'oe',
-                 'Ö': 'Oe',
-                 'ä': 'ae',
-                 'Ä': 'Ae',
-                 'ü': 'ue',
-                 'Ü': 'Ue',
-                 'ß': 'ss'}
+        chars = {'ö': 'oe', 'Ö': 'Oe', 'ä': 'ae', 'Ä': 'Ae', 'ü': 'ue', 'Ü': 'Ue', 'ß': 'ss'}
         lines = []
 
         with open(path, "r", encoding=self.encoding) as f:
@@ -91,31 +87,77 @@ class BankAccount:
         return self.get_months(n_months_back(3),datetime.now(),use_daily_table)
     
 
-    def summary(self,start,end):
+    def summary(self,start: datetime,end: datetime) -> bool:
         return plotting.summary(self,start,end)
     
-    def summary_last_quater(self):
-        now = datetime.now()
-        last_year = now.year-1
-        prev_Q4_start = datetime(last_year,10,1,0,0,0)
-        Q1_start = datetime(now.year,1,1,0,0,0)
-        Q2_start = datetime(now.year,4,1,0,0,0)
-        Q3_start = datetime(now.year,7,1,0,0,0)
-        Q4_start = datetime(now.year,10,1,0,0,0)
+    def summary_quater(self, quaterYear: str) -> bool:
+        if not re.match(r'^Q\d/(\d{4}|\d{2})$',quaterYear):
+            print("Please enter the quater in one of the two following formats: QX/YYYY or QX/YY")
+            return False
+
+        quater = quaterYear.split('/')[0]
+        quater_i = int(quater[1])
+        if 1 > quater_i or 4 < quater_i:
+            print(quater, "is not feasible. Please enter: Q1, Q2, Q3 or Q4")
+            return False
         
-        prev_Q4_end = Q1_start - timedelta(days=1)
-        Q1_end      = Q2_start - timedelta(days=1)
-        Q2_end      = Q3_start - timedelta(days=1)
-        Q3_end      = Q4_start - timedelta(days=1)
+        year_i = int(quaterYear.split('/')[1])%2000+2000
+
+        Q_start = datetime(year_i,(quater_i-1)*3+1,1)
+        if quater_i < 4:
+            Q_end   = datetime(year_i,(quater_i)*3+1,1) - timedelta(days=1)
+        else:
+            Q_end   = datetime(year_i+1,1,1) - timedelta(days=1)
         
-        quartals = [(prev_Q4_start,prev_Q4_end),
-                              (Q1_start,Q1_end),
-                              (Q2_start,Q2_end),
-                              (Q3_start,Q3_end)]
-        
-        return plotting.summary(*quartals[int((now.month-1)/3)])
-        
-        
+        return plotting.summary(self,Q_start, Q_end)
+
+    def summary_this_quater(self) -> bool:
+        year   = str(datetime.now().year)
+        quater = str(datetime.now().month//4+1)
+        return self.summary_quater('Q'+quater+'/'+year)
+
+
+    def summary_last_quater(self) -> bool:
+        year   = str(datetime.now().year)
+        quater = str(datetime.now().month//4)
+        if quater == 0:
+            quater = '4'
+            year = str(int(year)-1)
+        return self.summary_quater('Q'+quater+'/'+year)
+
+    def summary_month(self, monthYear: str) -> bool:
+        if not re.match(r'^(\d{1}|\d{2})/(\d{4}|\d{2})$',monthYear):
+            print("Please enter the quater in one of the following formats: MM/YYYY,M/YYYY, MM/YY or M/YY")
+            return False
+
+        month = int(monthYear.split('/')[0])
+        year = int(monthYear.split('/')[1])%2000+2000
+        if 1 > month or 12 < month:
+            print(month, "is not feasible. Please enter a month from 1 to 12")
+            return False
+
+        M_start = datetime(year,month,1)
+        if month < 12:
+            M_end   = datetime(year,month+1,1) - timedelta(days=1)
+        else:
+            M_end   = datetime(year+1,1,1) - timedelta(days=1)
+        return plotting.summary(self,M_start, M_end)
+
+    def summary_this_month(self) -> bool:
+        year   = str(datetime.now().year)
+        month = str(datetime.now().month)
+        return self.summary_month(month+'/'+year)
+
+
+    def summary_last_month(self) -> bool:
+        year   = str(datetime.now().year)
+        month = str(datetime.now().month-1)
+        if month == 0:
+            month = '12'
+            year = str(int(year)-1)
+        return self.summary_month(month+'/'+year)
+
+
     def update_daily(self):
         print('Updatig daily transactions...\t\t\t\t', end='')
         daily_wertstellung = list(self.daily_data['Wertstellung'])
