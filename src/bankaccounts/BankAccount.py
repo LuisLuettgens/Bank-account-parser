@@ -4,6 +4,12 @@ Created on Wed Apr  8 12:31:58 2020
 
 @author: LUL3FE
 """
+import sys
+sys.path.append('/home/luis/git/Bank-account-parser/src/bankaccounts')
+sys.path.append('/home/luis/git/Bank-account-parser/src/tests')
+sys.path.append('/home/luis/git/Bank-account-parser/src/plotting')
+sys.path.append('/home/luis/git/Bank-account-parser/src/utils') 
+
 import numpy as np
 import os
 import re
@@ -19,6 +25,7 @@ from pandas.plotting import register_matplotlib_converters
 import shelve
 from dateutil.relativedelta import relativedelta
 import plotting as plotting
+import database  as database
 
 class BankAccount:
     def __init__(self,encoding):
@@ -86,6 +93,17 @@ class BankAccount:
     def last_quater(self,use_daily_table=True):
         return self.get_months(n_months_back(3),datetime.now(),use_daily_table)
     
+    ################################################################################################
+    
+    ######                                            
+    #     # #       ####  ##### ##### # #    #  ####  
+    #     # #      #    #   #     #   # ##   # #    # 
+    ######  #      #    #   #     #   # # #  # #      
+    #       #      #    #   #     #   # #  # # #  ### 
+    #       #      #    #   #     #   # #   ## #    # 
+    #       ######  ####    #     #   # #    #  #### 
+
+    ################################################################################################
 
     def summary(self,start: datetime,end: datetime) -> bool:
         return plotting.summary(self,start,end)
@@ -157,6 +175,8 @@ class BankAccount:
             year = str(int(year)-1)
         return self.summary_month(month+'/'+year)
 
+    ################################################################################################
+    
 
     def update_daily(self):
         print('Updatig daily transactions...\t\t\t\t', end='')

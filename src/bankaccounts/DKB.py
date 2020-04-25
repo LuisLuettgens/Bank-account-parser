@@ -22,6 +22,7 @@ import helper as helper
 import matplotlib
 import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
+import database  as database
 
 class DKB(base.BankAccount):
     def __init__(self,
@@ -39,6 +40,10 @@ class DKB(base.BankAccount):
         self.get_meta_info()
         self.database = database
         self.load_keywords_from_db(self.database)
+        print('Loading new database...\t\t\t', end='')
+        self.keywords = '/home/luis/git/Bank-account-parser/database/keywords.json'
+        self.new_db = database.Database(self.keywords)
+        print('done!')
         self.pre_labeled = pre_labeled
         latest_data_file_compressed_path = self.erase_meta_data()
 
