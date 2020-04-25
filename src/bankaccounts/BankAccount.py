@@ -453,20 +453,17 @@ class BankAccount:
         if label not in self.categories:
             raise ValueError(
                 'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
-        else:
-            current_label = self.data.loc[row_idx, 'Transaction Label']
-            self.data.loc[row_idx, 'Transaction Label'] = label
-            counterpart = self.data.loc[row_idx, 'Auftraggeber / Beguenstigter']
-            print('Changed the label from: ', current_label, 'to', label, '.')
-            output = ' '.join(['Do you want to change all transactions with', counterpart, 'to', label, '?[y/n]\t'])
-            user_input = input(output)
-            if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
-                print('Changing all other labels accordingly...\t', end='')
-                for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False,
-                                                                                           na=False)].index:
-                    self.data.loc[idx, 'Transaction Label'] = label
-                print('done!')
-                return self.data[
-                    self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)]
-            else:
-                return pd.DataFrame(self.data.iloc[row_idx]).T
+
+        current_label = self.data.loc[row_idx, 'Transaction Label']
+        self.data.loc[row_idx, 'Transaction Label'] = label
+        counterpart = self.data.loc[row_idx, 'Auftraggeber / Beguenstigter']
+        print('Changed the label from: ', current_label, 'to', label, '.')
+        output = ' '.join(['Do you want to change all transactions with', counterpart, 'to', label, '?[y/n]\t'])
+        user_input = input(output)
+        if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
+            print('Changing all other labels accordingly...\t', end='')
+            for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)].index:
+                self.data.loc[idx, 'Transaction Label'] = label
+            print('done!')
+            return self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)]
+        return pd.DataFrame(self.data.iloc[row_idx]).T

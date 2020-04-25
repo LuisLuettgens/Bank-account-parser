@@ -502,18 +502,3 @@ class DKB(base.BankAccount):
                 self.pop_category(old)
         else:
             raise ValueError('Could not find a file under the given path: ' + path)
-
-    def get_months(self, start_date, end_date, use_daily_table=True, use_Werstellung = True):
-        if use_Werstellung:
-            if use_daily_table:
-                return self.daily_data[(self.daily_data['Wertstellung'] >= start_date) &
-                                       (self.daily_data['Wertstellung'] <= end_date)]
-        
-            return self.data[(self.data['Wertstellung'] >= start_date) &
-                             (self.data['Wertstellung'] <= end_date)]
-        if use_daily_table:
-            return self.daily_data[(self.daily_data['Buchungstag'] >= start_date) &
-                                       (self.daily_data['Buchungstag'] <= end_date)]
-            
-        return self.data[(self.data['Buchungstag'] >= start_date) &
-                             (self.data['Buchungstag'] <= end_date)]            
