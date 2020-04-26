@@ -6,10 +6,8 @@ Created on Wed Apr  8 12:31:58 2020
 """
 
 import re
-import shelve
 import sys
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -225,10 +223,10 @@ class BankAccount:
         return {category: -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']}
 
     def get_category(self, category, start, end):
-        if category not in self.labels:#self.categories:
+        if category not in self.labels:
             print('ERROR: This is an unknown category!\n')
             print('Choose one of the following categories:')
-            for i, cat in enumerate(self.labels):#self.categories):
+            for i, cat in enumerate(self.labels):
                 print(i, ': ', cat)
             return False
 
@@ -237,29 +235,17 @@ class BankAccount:
 
     def trend_adjacent(self, df1, df2):
         # assuming they are actually adjacent
-        df1_lastest = True
+        df1_latest = True
         if max(df1['Wertstellung']) < max(df2['Wertstellung']):
-            df1_lastest = False
+            df1_latest = False
 
         df1_expenses, _ = self.total_expenses(df1)
         df2_expenses, _ = self.total_expenses(df2)
 
         diff = {}
-        for category in self.labels:#self.categories:
-            diff[category] = (2*int(df1_lastest)-1)*(df1_expenses[category] - df2_expenses[category])
+        for category in self.labels:
+            diff[category] = (2*int(df1_latest)-1)*(df1_expenses[category] - df2_expenses[category])
         return diff
-
-    def load_keywords_from_db(self, path='database.db'):
-        extenstions = ['.bak', '.dat', '.dir']
-        if all(list(map(lambda x: Path(path+x).is_file(),extenstions))):
-            database        = shelve.open(path)
-            self.db         = dict(database)
-            #self.categories = list(self.db.keys())
-            #self.categories.append('Rent')
-            #self.categories.append('None')
-        else:
-            print('Could not find a file under the given path:', path)
-            raise ValueError('Could not find a file under the given path: ' + path)
 
     def save_data(self, path):
         self.data.to_csv(path, sep=';', quoting=int(True), encoding='latin-1')
@@ -274,7 +260,7 @@ class BankAccount:
                 f.write(line)
 
     def erase_meta_data(self):
-        with open(self.data_latest_file, "r", encoding='latin_1') as f:
+        with open(self.file, "r", encoding='latin_1') as f:
             lines = f.readlines()
 
         header_idx = -1
@@ -286,45 +272,45 @@ class BankAccount:
             self.meta_data_lines = lines[:header_idx]
             lines = lines[header_idx:]
 
-        with open(self.data_latest_file + 'wo_meta.csv', "w") as f:
+        with open(self.file + 'wo_meta.csv', "w") as f:
             for line in lines:
                 f.write(line)
-        return self.data_latest_file + 'wo_meta.csv'
+        return self.file + 'wo_meta.csv'
 
     def get_meta_info(self):
         print(pm.layer_prefix+'Generating meta data...')
         self.meta_data = {}
 
-        with open(self.data_latest_file, "r", encoding='latin_1') as f:
+        with open(self.file, "r", encoding='latin_1') as f:
             lines = f.readlines()
-        IBAN_line_pattern    = r'.+Kontonummer.+'
+        IBAN_line_pattern = r'.+Kontonummer.+'
         balance_line_pattern = r'.+Kontostand.+'
 
-        found_IBAN_line    = False
+        found_IBAN_line = False
         found_balance_line = False
 
         for line in lines:
             if not found_balance_line and re.findall(balance_line_pattern, line):
                 found_balance_line = True
-                balance_line       = line
+                balance_line = line
             if not found_IBAN_line and re.findall(IBAN_line_pattern, line):
                 found_IBAN_line = True
-                IBAN_line    = line
+                IBAN_line = line
 
         balance_pattern = r'\d{0,7}\.\d{0,3},\d{0,2}\sEUR'
-        current_balance_line_spltd = re.findall(balance_pattern, balance_line)[0].split()
-        self.meta_data['Balance']  = current_balance_line_spltd[0]
-        self.meta_data['Currency'] = current_balance_line_spltd[1]
+        current_balance_line_splited = re.findall(balance_pattern, balance_line)[0].split()
+        self.meta_data['Balance'] = current_balance_line_splited[0]
+        self.meta_data['Currency'] = current_balance_line_splited[1]
 
         IBAN_pattern = r'[\d|\w]+'
         current_balance_line = re.findall(IBAN_pattern, IBAN_line)
-        self.meta_data['IBAN']    = current_balance_line[1]
+        self.meta_data['IBAN'] = current_balance_line[1]
         self.meta_data['BA_type'] = current_balance_line[2]
 
-        self.current_balance   = float(self.meta_data['Balance'].replace('.','').replace(',','.'))
-        self.currency          = self.meta_data['Currency']
+        self.current_balance = float(self.meta_data['Balance'].replace('.', '').replace(',', '.'))
+        self.currency = self.meta_data['Currency']
         self.bank_account_type = self.meta_data['BA_type']
-        self.IBAN              = self.meta_data['IBAN']
+        self.IBAN = self.meta_data['IBAN']
 
     def label_rows(self):
         print(pm.layer_prefix+'Adding labels to transactions...')

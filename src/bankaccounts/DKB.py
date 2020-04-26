@@ -22,20 +22,18 @@ import parameters as pm
 
 class DKB(base.BankAccount):
     def __init__(self,
-                 data_latest_file: str,
+                 file: str,
                  pre_labeled: bool = False,
-                 other_data_files: List[str] = [],
                  keywords_file='database/keywords.json',
                  encoding='latin_1'):
         register_matplotlib_converters()
         print(pm.calling_DKB_constructor)
         super().__init__(encoding=encoding, keywords_file=keywords_file)
-        self.data_latest_file = self.replace_german_umlauts(data_latest_file)
-        self.data_other_files = other_data_files
+        self.file = self.replace_german_umlauts(file)
         self.dfs = []
         self.get_meta_info()
         self.pre_labeled = pre_labeled
-        latest_data_file_compressed_path = self.erase_meta_data()
+        file_compressed = self.erase_meta_data()
 
         self.DKB_header_unlabeled_list = ['Buchungstag', 'Wertstellung', 'Buchungstext', 'Auftraggeber / Beguenstigter',
                                           'Verwendungszweck', 'Kontonummer', 'BLZ', 'Betrag (EUR)', 'Glaeubiger-ID',
@@ -55,7 +53,7 @@ class DKB(base.BankAccount):
         self.has_transaction_label_col = False
         self.has_balance_col = False
 
-        with open(data_latest_file, "r", encoding=self.encoding) as f:
+        with open(file, "r", encoding=self.encoding) as f:
             lines = f.readlines()
 
         for line in lines:
@@ -67,42 +65,34 @@ class DKB(base.BankAccount):
                 self.has_transaction_label_col = True
 
         if self.has_balance_col and self.has_transaction_label_col:
-            self.dfs.append(pd.read_csv(latest_data_file_compressed_path,
-                                        delimiter=';',
-                                        encoding=self.encoding,
-                                        usecols=self.DKB_header_labeled,
-                                        parse_dates=['Buchungstag', 'Wertstellung'],
-                                        date_parser=date_parser_dkb,
-                                        dtype=col_types,
-                                        decimal=',',
-                                        thousands='.',
-                                        engine='python',
-                                        header=0,
-                                        names=self.DKB_header_labeled_list))
+            self.data = pd.read_csv(file_compressed,
+                                    delimiter=';',
+                                    encoding=self.encoding,
+                                    usecols=self.DKB_header_labeled,
+                                    parse_dates=['Buchungstag', 'Wertstellung'],
+                                    date_parser=date_parser_dkb,
+                                    dtype=col_types,
+                                    decimal=',',
+                                    thousands='.',
+                                    engine='python',
+                                    header=0,
+                                    names=self.DKB_header_labeled_list)
         else:
-            self.dfs.append(pd.read_csv(latest_data_file_compressed_path,
-                                        delimiter=';',
-                                        encoding=self.encoding,
-                                        usecols=self.DKB_header_unlabeled,
-                                        parse_dates=['Buchungstag', 'Wertstellung'],
-                                        date_parser=date_parser_dkb,
-                                        dtype=col_types,
-                                        decimal=',',
-                                        thousands='.',
-                                        engine='python',
-                                        header=0,
-                                        names=self.DKB_header_unlabeled_list))
+            self.data = pd.read_csv(file_compressed,
+                                    delimiter=';',
+                                    encoding=self.encoding,
+                                    usecols=self.DKB_header_unlabeled,
+                                    parse_dates=['Buchungstag', 'Wertstellung'],
+                                    date_parser=date_parser_dkb,
+                                    dtype=col_types,
+                                    decimal=',',
+                                    thousands='.',
+                                    engine='python',
+                                    header=0,
+                                    names=self.DKB_header_unlabeled_list)
 
-        os.remove(latest_data_file_compressed_path)
+        os.remove(file_compressed)
 
-        for data_file in self.data_other_files:
-            print(pm.layer_prefix+'Parsing file: ' + data_file + '...')
-            helper.is_valid_csv_file(data_file)
-            self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding=self.encoding))
-
-        append_ignore_idx = functools.partial(pd.DataFrame.append, ignore_index=True)
-
-        self.data = functools.reduce(append_ignore_idx, self.dfs)
         self.valid_table()
         self.data = self.add_balance_col(self.data)
 
