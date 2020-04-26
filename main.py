@@ -7,6 +7,7 @@ sys.path.insert(0,'./src/bankaccounts')
 sys.path.insert(0,'./src/tests')
 
 import BankAccounts
+from functools import partial
 
 
 def main():
@@ -17,6 +18,7 @@ def main():
                           keywords_file='/home/luis/git/Bank-account-parser/database/keywords.json',
                           pre_labeled=False)
 
+    ba.summary_last_quarter()
 
 if __name__ == '__main__':
     main()

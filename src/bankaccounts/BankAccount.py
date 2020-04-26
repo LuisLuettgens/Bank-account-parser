@@ -6,36 +6,35 @@ Created on Wed Apr  8 12:31:58 2020
 """
 
 import re
-import sys
 from datetime import datetime, timedelta
 
-import numpy as np
 import pandas as pd
 
 import helper as helper
-import plotting as plotting
+from plotting import summary
 import parameters as pm
 import jsonInterpreter as jsonInterpreter
 
-sys.path.append('/home/luis/git/Bank-account-parser/src/bankaccounts')
-sys.path.append('/home/luis/git/Bank-account-parser/src/tests')
-sys.path.append('/home/luis/git/Bank-account-parser/src/plotting')
-sys.path.append('/home/luis/git/Bank-account-parser/src/utils')
-
 
 class BankAccount:
-    def __init__(self, encoding, keywords_file):
+    def __init__(self, encoding, keywords_file, file):
+        self.file = file
+
+        # TODO correct this
+        self.data = pd.DataFrame({})
+        self.daily_data = pd.DataFrame({})
+
         print(pm.layer_prefix+'Calling base class constructor...')
         # set the encoding used for input files
-        self.encoding=encoding
+        self.encoding = encoding
 
         # parse keywords_file
         self.db = jsonInterpreter.Database(keywords_file)
         self.labels = self.db.labels
 
-    def replace_german_umlauts(self, path: str) -> str:
+    def replace_german_umlauts(self, path: str, encoding: str) -> str:
         """
-        Creates a new file that is a copy of path, but  all occurences of german umlauts habe been replaced.
+        Creates a new file that is a copy of path, but  all occurrences of german umlauts have been replaced.
 
         Args:
             path: path to the file
@@ -47,7 +46,7 @@ class BankAccount:
         chars = {'ö': 'oe', 'Ö': 'Oe', 'ä': 'ae', 'Ä': 'Ae', 'ü': 'ue', 'Ü': 'Ue', 'ß': 'ss'}
         lines = []
 
-        with open(path, "r", encoding=self.encoding) as f:
+        with open(path, "r", encoding=encoding) as f:
             lines_local = f.readlines()
 
             for line in lines_local:
@@ -66,10 +65,10 @@ class BankAccount:
         return self.data
 
     def get_data_daily(self):
-        return self.daily_data()
+        return self.daily_data
 
-    def get_months(self, start_date, end_date, use_daily_table=True, use_Werstellung = True):
-        if use_Werstellung:
+    def get_months(self, start_date, end_date, use_daily_table=True, use_werstellung=True):
+        if use_werstellung:
             if use_daily_table:
                 return self.daily_data[(self.daily_data['Wertstellung'] >= start_date) &
                                        (self.daily_data['Wertstellung'] <= end_date)]
@@ -84,92 +83,74 @@ class BankAccount:
         return self.data[(self.data['Buchungstag'] >= start_date) &
                          (self.data['Buchungstag'] <= end_date)]
 
-    def last_month(self):
-        return self.get_months(n_months_back(1),datetime.now(),use_daily_table=False)
-
-    def last_month_daily(self):
-        return self.get_months(n_months_back(1),datetime.now())
-
-
-    def last_quater(self,use_daily_table=True):
-        return self.get_months(n_months_back(3),datetime.now(),use_daily_table)
-
+    ################################################################################################
+    #
+    # PLOTTING
+    #
     ################################################################################################
 
-    ######
-    #     # #       ####  ##### ##### # #    #  ####
-    #     # #      #    #   #     #   # ##   # #    #
-    ######  #      #    #   #     #   # # #  # #
-    #       #      #    #   #     #   # #  # # #  ###
-    #       #      #    #   #     #   # #   ## #    #
-    #       ######  ####    #     #   # #    #  ####
+    def summary(self, start: datetime, end: datetime) -> bool:
+        return plotting.summary(self, start, end)
 
-    ################################################################################################
-
-    def summary(self,start: datetime,end: datetime) -> bool:
-        return plotting.summary(self,start,end)
-
-    def summary_quater(self, quaterYear: str) -> bool:
-        if not re.match(r'^Q\d/(\d{4}|\d{2})$',quaterYear):
-            print('Please enter the quater in one of the two following formats: QX/YYYY or QX/YY')
+    def summary_quarter(self, quarter_n_year: str) -> bool:
+        if not re.match(r'^Q\d/(\d{4}|\d{2})$', quarter_n_year):
+            print('Please enter the quarter in one of the two following formats: QX/YYYY or QX/YY')
             return False
 
-        quater = quaterYear.split('/')[0]
-        quater_i = int(quater[1])
-        if 1 > quater_i or 4 < quater_i:
-            print(quater, 'is not feasible. Please enter: Q1, Q2, Q3 or Q4')
+        quarter = quarter_n_year.split('/')[0]
+        quarter_i = int(quarter[1])
+        if 1 > quarter_i or 4 < quarter_i:
+            print(quarter, 'is not feasible. Please enter: Q1, Q2, Q3 or Q4')
             return False
 
-        year_i = int(quaterYear.split('/')[1])%2000+2000
+        year_i = int(quarter_n_year.split('/')[1]) % 2000 + 2000
 
-        Q_start = datetime(year_i,(quater_i-1)*3+1,1)
-        if quater_i < 4:
-            Q_end   = datetime(year_i,(quater_i)*3+1,1) - timedelta(days=1)
+        Q_start = datetime(year_i, (quarter_i-1)*3+1, 1)
+        if quarter_i < 4:
+            Q_end = datetime(year_i, quarter_i*3+1, 1) - timedelta(days=1)
         else:
-            Q_end   = datetime(year_i+1,1,1) - timedelta(days=1)
+            Q_end = datetime(year_i+1, 1, 1) - timedelta(days=1)
 
-        return plotting.summary(self,Q_start, Q_end)
+        return summary(self, Q_start, Q_end)
 
-    def summary_this_quater(self) -> bool:
-        year   = str(datetime.now().year)
-        quater = str(datetime.now().month//4+1)
-        return self.summary_quater('Q'+quater+'/'+year)
+    def summary_this_quarter(self) -> bool:
+        year = str(datetime.now().year)
+        quarter = str(datetime.now().month//4+1)
+        return self.summary_quarter('Q'+quarter+'/'+year)
 
-
-    def summary_last_quater(self) -> bool:
-        year   = str(datetime.now().year)
-        quater = str(datetime.now().month//4)
-        if quater == 0:
-            quater = '4'
+    def summary_last_quarter(self) -> bool:
+        year = str(datetime.now().year)
+        quarter = str(datetime.now().month//4)
+        if quarter == 0:
+            quarter = '4'
             year = str(int(year)-1)
-        return self.summary_quater('Q'+quater+'/'+year)
+        return self.summary_quarter('Q'+quarter+'/'+year)
 
-    def summary_month(self, monthYear: str) -> bool:
-        if not re.match(r'^(\d{1}|\d{2})/(\d{4}|\d{2})$',monthYear):
-            print('Please enter the quater in one of the following formats: MM/YYYY,M/YYYY, MM/YY or M/YY')
+    def summary_month(self, month_n_year: str) -> bool:
+        if not re.match(r'^(\d|\d{2})/(\d{4}|\d{2})$', month_n_year):
+            print('Please enter the quarter in one of the following formats: MM/YYYY, M/YYYY, MM/YY or M/YY')
             return False
 
-        month = int(monthYear.split('/')[0])
-        year = int(monthYear.split('/')[1])%2000+2000
+        month = int(month_n_year.split('/')[0])
+        year = int(month_n_year.split('/')[1]) % 2000 + 2000
         if 1 > month or 12 < month:
             print(month, 'is not feasible. Please enter a month from 1 to 12')
             return False
 
-        M_start = datetime(year,month,1)
+        M_start = datetime(year, month, 1)
         if month < 12:
-            M_end   = datetime(year,month+1,1) - timedelta(days=1)
+            M_end = datetime(year, month+1, 1) - timedelta(days=1)
         else:
-            M_end   = datetime(year+1,1,1) - timedelta(days=1)
-        return plotting.summary(self,M_start, M_end)
+            M_end = datetime(year+1, 1, 1) - timedelta(days=1)
+        return plotting.summary(self, M_start, M_end)
 
     def summary_this_month(self) -> bool:
-        year   = str(datetime.now().year)
+        year = str(datetime.now().year)
         month = str(datetime.now().month)
         return self.summary_month(month+'/'+year)
 
-
     def summary_last_month(self) -> bool:
-        year   = str(datetime.now().year)
+        year = str(datetime.now().year)
         month = str(datetime.now().month-1)
         if month == 0:
             month = '12'
@@ -178,37 +159,41 @@ class BankAccount:
 
     ################################################################################################
 
-
     def update_daily(self):
-        print(pm.layer_prefix+'Updatig daily transactions...')
+        print(pm.layer_prefix+'Updating daily transactions...')
         daily_wertstellung = list(self.daily_data['Wertstellung'])
         start_date = min(daily_wertstellung)
         end_date = max(daily_wertstellung)
         days = helper.generate_days(start_date, end_date)
-        df = pd.DataFrame({'Wertstellung': [], 'Betrag (EUR)': [], 'Balance': []})
+        df = pd.DataFrame({'Wertstellung': [],
+                           'Betrag (EUR)': [],
+                           'Balance': []})
 
         for day in days:
-            s = pd.Series({'Wertstellung': day, 'Betrag (EUR)': 0, 'Balance': None})
-            df = df.append(s,ignore_index=True)
+            s = pd.Series({'Wertstellung': day,
+                           'Betrag (EUR)': 0,
+                           'Balance': None})
+            df = df.append(s, ignore_index=True)
 
         for index, row in self.daily_data.iterrows():
-            WERT = row['Wertstellung']
-            BETRAG = row['Betrag (EUR)']
-            BALANCE = row['Balance']
-            idx = df.index[df['Wertstellung'] == WERT]
-            df.loc[idx,'Betrag (EUR)'] = BETRAG
-            df.loc[idx,'Balance']      = BALANCE
+            wert = row['Wertstellung']
+            betrag = row['Betrag (EUR)']
+            balance = row['Balance']
+            idx = df.index[df['Wertstellung'] == wert]
+            df.loc[idx, 'Betrag (EUR)'] = betrag
+            df.loc[idx, 'Balance'] = balance
 
         for idx, row in df.iterrows():
             if row['Balance'] is None:
-                df.loc[idx,'Balance'] = df.loc[idx-1,'Balance']
+                df.loc[idx, 'Balance'] = df.loc[idx-1, 'Balance']
         return df
 
     def total_expenses(self, df):
         total_expenses = -df.loc[df['Betrag (EUR)'] < 0].sum()['Betrag (EUR)']
         expenses = {}
-        for category in self.labels:#self.categories:
-            expenses[category] = -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']
+        for category in self.labels:
+            expenses[category] = -df.loc[(df['Betrag (EUR)'] < 0) &
+                                         (df['Transaction Label'] == category)].sum()['Betrag (EUR)']
         return expenses, total_expenses
 
     def cluster_expenses(self, d, total_expenses, min_quota=0.025):
@@ -220,7 +205,8 @@ class BankAccount:
         return d, total_expenses
 
     def category_expenses(self, df, category):
-        return {category: -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']}
+        return {category: -df.loc[(df['Betrag (EUR)'] < 0) &
+                                  (df['Transaction Label'] == category)].sum()['Betrag (EUR)']}
 
     def get_category(self, category, start, end):
         if category not in self.labels:
@@ -258,59 +244,6 @@ class BankAccount:
                 f.write(line)
             for line in lines:
                 f.write(line)
-
-    def erase_meta_data(self):
-        with open(self.file, "r", encoding='latin_1') as f:
-            lines = f.readlines()
-
-        header_idx = -1
-        for i, line in enumerate(lines):
-            if np.min([line.find('Buchungstag'), line.find('Wertstellung'), line.find('BLZ')])> -1:
-                header_idx = i
-
-        if header_idx > -1:
-            self.meta_data_lines = lines[:header_idx]
-            lines = lines[header_idx:]
-
-        with open(self.file + 'wo_meta.csv', "w") as f:
-            for line in lines:
-                f.write(line)
-        return self.file + 'wo_meta.csv'
-
-    def get_meta_info(self):
-        print(pm.layer_prefix+'Generating meta data...')
-        self.meta_data = {}
-
-        with open(self.file, "r", encoding='latin_1') as f:
-            lines = f.readlines()
-        IBAN_line_pattern = r'.+Kontonummer.+'
-        balance_line_pattern = r'.+Kontostand.+'
-
-        found_IBAN_line = False
-        found_balance_line = False
-
-        for line in lines:
-            if not found_balance_line and re.findall(balance_line_pattern, line):
-                found_balance_line = True
-                balance_line = line
-            if not found_IBAN_line and re.findall(IBAN_line_pattern, line):
-                found_IBAN_line = True
-                IBAN_line = line
-
-        balance_pattern = r'\d{0,7}\.\d{0,3},\d{0,2}\sEUR'
-        current_balance_line_splited = re.findall(balance_pattern, balance_line)[0].split()
-        self.meta_data['Balance'] = current_balance_line_splited[0]
-        self.meta_data['Currency'] = current_balance_line_splited[1]
-
-        IBAN_pattern = r'[\d|\w]+'
-        current_balance_line = re.findall(IBAN_pattern, IBAN_line)
-        self.meta_data['IBAN'] = current_balance_line[1]
-        self.meta_data['BA_type'] = current_balance_line[2]
-
-        self.current_balance = float(self.meta_data['Balance'].replace('.', '').replace(',', '.'))
-        self.currency = self.meta_data['Currency']
-        self.bank_account_type = self.meta_data['BA_type']
-        self.IBAN = self.meta_data['IBAN']
 
     def label_rows(self):
         print(pm.layer_prefix+'Adding labels to transactions...')
@@ -375,9 +308,9 @@ class BankAccount:
         Raises:
             ValueError: Raised when label is not a string found in self.categories.
         """
-        if label not in self.labels:#self.categories:
-            raise ValueError(
-                'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
+        if label not in self.labels:
+            raise ValueError("This is not a valid label. Please choose one from the following: '"
+                             + ', '.join(self.categories))
 
         current_label = self.data.loc[row_idx, 'Transaction Label']
         self.data.loc[row_idx, 'Transaction Label'] = label
@@ -387,7 +320,8 @@ class BankAccount:
         user_input = input(output)
         if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
             print('Changing all other labels accordingly...')
-            for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)].index:
+            for idx in self.data[self.data['Auftraggeber / Beguenstigter'].str.
+                    contains(counterpart, case=False, na=False)].index:
                 self.data.loc[idx, 'Transaction Label'] = label
             return self.data[self.data['Auftraggeber / Beguenstigter'].str.contains(counterpart, case=False, na=False)]
         return pd.DataFrame(self.data.iloc[row_idx]).T

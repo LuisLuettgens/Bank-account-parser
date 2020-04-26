@@ -1,10 +1,9 @@
 import re
 from datetime import datetime, timedelta
-import parameters as pm
 from typing import List
 import os
-
 import pandas as pd
+
 
 def generate_days(first: datetime, last: datetime) -> List[datetime]:
     """
