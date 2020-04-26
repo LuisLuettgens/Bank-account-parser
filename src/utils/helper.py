@@ -1,25 +1,10 @@
 import re
 from datetime import datetime, timedelta
-#from pathlib import Path
+import parameters as pm
 from typing import List
 import os
 
 import pandas as pd
-
-
-def is_rent(df: pd.DataFrame) -> pd.DataFrame:
-    """
-        Filter method to classify transactions with the label Rent
-    Args:
-        df: DataFrame that is queried
-
-    Returns:
-        returns all the rows of df where 'Verwendungszweck' equals 'Miet' and 'Buchungstext' is not equal to 'Gutschrift'
-        as a DataFrame
-    """
-    return (df['Verwendungszweck'].str.contains('Miet', case=False, na=False) &
-           (df['Buchungstext'].str.contains('Gutschrift', case=False, na=False) is False))
-
 
 def generate_days(first: datetime, last: datetime) -> List[datetime]:
     """
@@ -49,17 +34,18 @@ def is_valid_csv_file(path: str) -> bool:
     Returns:
         True if path can be resolved to a csv-file, False otherwise
     """
-    
+
     # Check if path destination can be resolved into a file
     if not os.path.isfile(path):
         raise ValueError('The path: ' + path + ' cannot be resolved to a valid file. Please check the input path.')
-    
+
     # Check if the file is a csv-file
     pattern = r'\.csv$'
-    if re.search(pattern, path,re.IGNORECASE) is None:
+    if re.search(pattern, path, re.IGNORECASE) is None:
         raise ValueError('The input file does not appear to be a csv file. Please check the file-suffix.')
-    
+
     return True
+
 
 # TODO: check whether code is redundant
 def is_valid_json_file(path: str) -> bool:

@@ -8,12 +8,14 @@ sys.path.insert(0,'./src/tests')
 
 import BankAccounts
 
+
 def main():
-    
 
     # Create a bank account and label it based on pre-defined rules
 
-    ba = BankAccounts.DKB('1036976429_v4.csv', pre_labeled=True)
+    ba = BankAccounts.DKB('/home/luis/Documents/1036976429.csv',
+                          keywords_file='/home/luis/git/Bank-account-parser/database/keywords.json',
+                          pre_labeled=False)
 
 
 if __name__ == '__main__':

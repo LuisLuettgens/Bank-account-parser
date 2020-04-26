@@ -7,9 +7,7 @@ Created on Fri Apr 10 12:52:19 2020
 
 import functools
 import os
-import shelve
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 from typing import List
 
 import numpy as np
@@ -18,33 +16,24 @@ from pandas.plotting import register_matplotlib_converters
 
 import BankAccount as base
 import helper as helper
+import parameters as pm
 
-import matplotlib
-import matplotlib.pyplot as plt
-from dateutil.relativedelta import relativedelta
-import jsonInterpreter as jsonInterpreter
+
 
 class DKB(base.BankAccount):
     def __init__(self,
                  data_latest_file: str,
                  pre_labeled: bool = False,
                  other_data_files: List[str] = [],
-                 database='database/database.db',
-                 new_keywords='/home/luis/git/Bank-account-parser/database/keywords.json',
+                 keywords_file='database/keywords.json',
                  encoding='latin_1'):
         register_matplotlib_converters()
-        super().__init__(encoding)
-        print('')
+        print(pm.calling_DKB_constructor)
+        super().__init__(encoding=encoding, keywords_file=keywords_file)
         self.data_latest_file = self.replace_german_umlauts(data_latest_file)
         self.data_other_files = other_data_files
         self.dfs = []
         self.get_meta_info()
-        self.database = database
-        self.load_keywords_from_db(self.database)
-        print('Loading new database...\t\t\t', end='')
-        self.new_keywords = new_keywords
-        self.new_db = jsonInterpreter.Database(self.new_keywords)
-        self.labels = self.new_db.labels
         self.pre_labeled = pre_labeled
         latest_data_file_compressed_path = self.erase_meta_data()
 
@@ -107,10 +96,9 @@ class DKB(base.BankAccount):
         os.remove(latest_data_file_compressed_path)
 
         for data_file in self.data_other_files:
-            print('Parsing file: ' + data_file + '...\t\t\t', end='')
+            print(pm.layer_prefix+'Parsing file: ' + data_file + '...')
             helper.is_valid_csv_file(data_file)
             self.dfs.append(pd.read_csv(helper.erase_meta_data(data_file), delimiter=';', encoding=self.encoding))
-            print('done!')
 
         append_ignore_idx = functools.partial(pd.DataFrame.append, ignore_index=True)
 
@@ -134,48 +122,46 @@ class DKB(base.BankAccount):
         self.end_date = max(self.data['Wertstellung'])
 
         del self.data['index']
+        print(pm.dashed_line)
 
     def prep_table(self, sort_by='Wertstellung', ascending=False) -> None:
         """
         This function sorts self.data by the column with name sort_by. If the entries don't have a label a 'Transaction
         Label' column is added to self.data and calls self.add_balance_col
-            
+
         Args:
             self:      An object of the class DKB
             sort_by:   Column name by which the table shall be sorted (default = 'Wertstellung')
             ascending: Sorting order (default= descending)
-                
+
         Returns:
             None
         """
-        print('Sorting the table based on Wertstellung-column...\t', end='')
+        print(pm.layer_prefix+'Sorting the table based on Wertstellung-column...')
         self.data = self.data.sort_values(by=sort_by, ascending=ascending)
         self.data = self.data.reset_index()
-        print('done!')
 
         if 'Transaction Label' not in self.data.columns:
-            print('Adding a transaction label column...\t\t\t', end='')
+            print(pm.layer_prefix+'Adding a transaction label column...')
             self.data['Transaction Label'] = 'None'
-            print('done!')
 
         if 'Balance' not in self.data.columns:
-            print('Adding a column with the daily balance...\t\t', end='')
+            print(pm.layer_prefix+'Adding a column with the daily balance...')
             self.data = self.add_balance_col(self.data)
-            print('done!')
 
     def valid_table(self) -> None:
         """
         This function checks whether all expected column names appear in self.data and calls self.prep_table() afterwards.
-        
+
         Args:
             self:    An object of the class DKB
-            
+
         Returns:
             None
         Raises:
             ValueError: Raised when one of the column names is missing.
         """
-        print('Checking whether table is in expected DKB-format...\t', end='')
+        print(pm.layer_prefix+'Checking whether table is in expected DKB-format...')
 
         if self.pre_labeled:
             missing_cols = self.DKB_header_labeled.difference(self.data.columns)
@@ -192,7 +178,6 @@ class DKB(base.BankAccount):
                 missing_cols) + ' do not appear as a column names in the provided csv. Please make sure that '
                                 'it exists and try again...')
 
-        print('done!')
 
         pd.set_option('display.max_columns', None)
         self.prep_table()
@@ -200,14 +185,14 @@ class DKB(base.BankAccount):
     def info_labeled(self) -> None:
         """
         This function prints the ratio of labeled entries in the DataFrame.
-        
+
         Args:
             self:    An object of the class DKB
-            
+
         Returns:
             None
         """
-        
+
         if 'None' not in self.data['Transaction Label'].value_counts().index:
             print('In total', "{:.2f}".format(100), "% of all transactions have labels.")
             print('')
@@ -221,24 +206,24 @@ class DKB(base.BankAccount):
 
             print('')
 
-    def get_category(self, category: str, start: datetime = None, end: datetime = None) -> pd.DataFrame:
+    def get_label(self, category: str, start: datetime = None, end: datetime = None) -> pd.DataFrame:
         """
             This function let's you filter self.data for a given category in a time interval. If no start or end time
             are supplied the minimum and maximum are used respectively instead.
-        
+
         Args:
             self:      An object of the class DKB.
             category: The label that shall be filtered for
             start:     The start datetime that is used for that query (default = None)
             end:       The end datetime that is used for that query (default = None)
-            
-            
+
+
         Returns:
             A DataFrame containing only entries from the closed interval [start, end] with 'Transaction Label' equal to categorie.
 
         Raises:
-            ValueError: Raised when category does not appear in self.categories.
-        
+            ValueError: Raised when category does not appear in self.labels.
+
         """
         if start is None:
             start = self.start_date
@@ -246,45 +231,11 @@ class DKB(base.BankAccount):
         if end is None:
             end = self.end_date
 
-        if category not in self.labels:# self.categories:
-            raise ValueError(
-                'This is not a valid label. Please choose one from the following: ' + ', '.join(self.labels))#self.categories))
+        if category not in self.labels:
+            raise ValueError('This is not a valid label. Please choose one from the following: ' + ', '.join(self.labels))
 
         df_trans = self.get_months(start, end, use_daily_table=False)
         return df_trans[df_trans['Transaction Label'] == category]
-
-    def load_keywords_from_db(self, path: str = '') -> None:
-        """
-        This function load a database from 'path' and it as a dictonary of dictonaries in self.db. The keys of self.db are the known categories.
-        furthermore three categories: 'Rent', 'None' and 'Private' added.
-        
-        Args:
-            self: An object of the class DKB.
-            path: path to the database file (default = database.db)   
-            
-        Returns:
-            None
-        Raises:
-            ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
-        """
-        if path == '':
-            path = self.database
-        extensions = ['.bak', '.dat', '.dir']
-        if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
-            database = shelve.open(path)
-            self.db = dict(database)
-            #self.categories = list(self.db.keys())
-            #self.categories.extend(['Rent', 'None', 'Private'])
-        else:
-            raise ValueError('Could not find a file under the given path: ' + path)
-
-    def all_categories(self) -> List[str]:
-        """
-            This function returns all known categories of the DKB-object.
-        Returns:
-            All known categories ('Transaction Labels') as a list of strings
-        """
-        return self.labels#self.categories
 
     def all_labels(self) -> List[str]:
         "This functions is a copy of all_categories"
@@ -322,36 +273,6 @@ class DKB(base.BankAccount):
         print('The data was successfully saved under this path:', path)
         return True
 
-    def label_rows(self):
-        print('Adding labels to transactions...\t\t\t', end='')
-        for idx, row in self.data.iterrows():
-            row_df = pd.DataFrame(row).T
-            if row_df.loc[idx, 'Transaction Label'] != 'None':
-                continue
-            for key in self.new_db.data.keys():
-                label = key
-                compose = self.new_db.data[label]['Compose']
-                result_per_column = []
-                for col_name in self.new_db.data[label]:
-                    if col_name == 'Compose' or self.new_db.data[label][col_name] is None:
-                        continue
-                    result_per_column.append(row_df[col_name].str.contains("|".join(self.new_db.data[label][col_name]),
-                                                                           case=False, na=False).values[0])
-                if len(result_per_column) == 0:
-                    continue
-                if compose == 'and':
-                    if all(result_per_column):
-                        self.data.loc[idx, 'Transaction Label'] = label
-                elif compose == 'or':
-                    if any(result_per_column):
-                        self.data.loc[idx, 'Transaction Label'] = label
-                elif compose is None:
-                    if any(result_per_column):
-                        self.data.loc[idx, 'Transaction Label'] = label
-
-        print('done!')
-        return True
-
     def add_balance_col(self, data: pd.DataFrame) -> pd.DataFrame:
         """
             Based on the self.current_balance and the transactions in columns 'Betrag (EUR)' of data the balance for
@@ -369,7 +290,7 @@ class DKB(base.BankAccount):
         if 'Betrag (EUR)' not in data.columns:
             raise KeyError(
                 'The input DataFrame has no column named: ' + 'Betrag (EUR)' + '. Please make sure it exists.')
-        
+
         s = [self.current_balance]
         for i, transaction in enumerate(data['Betrag (EUR)']):
             s.append(s[i] - transaction)
@@ -387,158 +308,3 @@ class DKB(base.BankAccount):
             returns the row with index 'idx' as a DataFrame
         """
         return pd.DataFrame(self.data.iloc[idx]).T
-
-    def change_category(self, old: str, new: str) -> bool:
-        # TODO: sync changes with database
-        # TODO: looks like they are not working properly
-        """
-            changes all labels from a category to the new label
-        Args:
-            old: old label
-            new: new label
-
-        Returns:
-            True if the changing was successful
-
-        Raises:
-            KeyError: If old is not a member of data.columns
-        """
-        self.data.loc[self.data['Transaction Label'] == old, 'Transaction Label'] = new
-        self.load_keywords_from_db(self.database)
-        return True
-
-    def load_keywords_from_db(self, path: str = '') -> None:
-        """
-        This function load a database from 'path' and it as a dictonary of dictonaries in self.db. The keys of self.db are the known categories.
-        furthermore three categories: 'Rent', 'None' and 'Private' added.
-
-        Args:
-            self: An object of the class DKB.
-            path: path to the database file (default = database.db)
-
-        Returns:
-            None
-        Raises:
-            ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
-        """
-        if path == '':
-            path = self.database
-        extensions = ['.bak', '.dat', '.dir']
-        if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
-            database = shelve.open(path)
-            self.db = dict(database)
-            #self.categories = list(self.db.keys())
-            #self.categories.extend(['Rent', 'None', 'Private'])
-        else:
-            raise ValueError('Could not find a file under the given path: ' + path)
-
-    def add_category(self, category: str, path: str = '') -> bool:
-        # TODO: looks like they are not working properly
-        """
-                This function deletes a category from the database
-                Args:
-                    path: path to database (default = self.database)
-                    category: name of the category that shall be removed
-
-                Returns:
-                    True if the deletion was successful
-        """
-        if path == '':
-            path = self.database
-        database = shelve.open(path)
-        database[category] = {}
-        database.sync()
-        print(list(database.keys()))
-        database.close()
-        return True
-
-    def pop_category(self, category: str, path: str = '') -> bool:
-        # TODO: looks like they are not working properly
-        """
-        This function deletes a category from the database
-        Args:
-            path: path to database (default = self.database)
-            category: name of the category that shall be removed
-
-        Returns:
-            True if the deletion was successful
-        """
-        if path == '':
-            path = self.database
-        database = shelve.open(path)
-        database.pop(category, None)
-        database.sync()
-        print(list(database.keys()))
-        database.close()
-        self.load_keywords_from_db(self.database)
-
-    def change_category_in_db(self, old: str, new: str, path: str = '') -> None:
-        """
-        This function load a database from 'path' and it as a dictonary of dictonaries in self.db. The keys of self.db are the known categories.
-        furthermore three categories: 'Rent', 'None' and 'Private' added.
-
-        Args:
-            old:  old category label
-            new:  new category label
-            self: An object of the class DKB.
-            path: path to the database file (default = database.db)
-
-        Returns:
-            None
-        Raises:
-            ValueError: Raised when one of the files: database.db.bak, database.db.dat or database.db.dir are missing.
-        """
-        if path == '':
-            path = self.database
-        extensions = ['.bak', '.dat', '.dir']
-        if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
-            database = shelve.open(path)
-            database[new] = database[old]
-            #self.categories = list(self.db.keys())
-            #self.categories.extend(['Rent', 'None', 'Private'])
-            self.load_keywords_from_db()
-            self.change_category(old, new)
-            user_input = input('Do you want to delete the category: ' + old + '[y/n]')
-            if user_input in ['y', 'Y', 'yes', 'ja', 'Ja']:
-                self.pop_category(old)
-        else:
-            raise ValueError('Could not find a file under the given path: ' + path)
-
-"""
-    def label_rows(self, path: str = '') -> bool:
-        This function adds labels to each transaction in self.data. Basis is the keyword database. Previously labeled
-        entries are not labeled again. So far the keywords stored in the database file are concatenated via 'or/|',
-        this implies any labeling rule that uses 'and/&' has to be added manually like it is done with the label 'Rent'.
-
-        Args:
-            path location where the database is stored
-
-        Returns:
-            True if the labeling was successful
-
-        Raises:
-            ValueError: When no matching file can be found at the input path
-
-        print('Adding labels to transactions...\t\t\t', end='')
-        if path == '':
-            path = self.database
-        self.load_keywords_from_db(path)
-        for idx, row in self.data.iterrows():
-            row_df = pd.DataFrame(row).T
-
-            if row_df.loc[idx, 'Transaction Label'] != 'None':
-                continue
-            else:
-                for key in (self.db).keys():
-                    label = key
-                    for cat_key in self.db[key].keys():
-                        col_name = cat_key
-                        if row_df[col_name].str.contains("|".join(self.db[key][cat_key]), case=False, na=False).values[
-                            0]:
-                            self.data.loc[idx, 'Transaction Label'] = label
-
-                if helper.is_rent(row_df).values[0]:
-                    self.data.loc[idx, 'Transaction Label'] = 'Rent'
-        print('done!')
-        return True
-"""
