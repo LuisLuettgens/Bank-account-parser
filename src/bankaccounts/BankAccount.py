@@ -227,11 +227,11 @@ class BankAccount:
     def total_expenses(self, df):
         total_expenses = -df.loc[df['Betrag (EUR)'] < 0].sum()['Betrag (EUR)']
         expenses = {}
-        for category in self.categories:
+        for category in self.labels:#self.categories:
             expenses[category] = -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']
         return expenses, total_expenses
     
-    def cluster_expenses(self,d,total_expenses, min_quota = 0.025):
+    def cluster_expenses(self, d, total_expenses, min_quota=0.025):
         d['other'] = 0.
         for key in d.copy().keys():
             if d[key] < min_quota*total_expenses:
@@ -242,18 +242,18 @@ class BankAccount:
     def category_expenses(self, df, category):
         return {category: -df.loc[(df['Betrag (EUR)'] < 0) & (df['Transaction Label'] == category)].sum()['Betrag (EUR)']}
         
-    def get_category(self,category,start,end):
-        if category not in self.categories:
+    def get_category(self, category, start, end):
+        if category not in self.labels:#self.categories:
             print('ERROR: This is an unknown category!\n')
             print('Choose one of the following categories:')
-            for i, cat in enumerate(self.categories):
-                print(i,': ', cat)
+            for i, cat in enumerate(self.labels):#self.categories):
+                print(i, ': ', cat)
             return False
     
-        df_trans = self.get_months(start,end,use_daily_table=False)
+        df_trans = self.get_months(start, end, use_daily_table=False)
         return df_trans[df_trans['Transaction Label'] == category]
     
-    def trend_adjacent(self,df1, df2):
+    def trend_adjacent(self, df1, df2):
         # assuming they are actually adjacent
         df1_lastest = True
         if max(df1['Wertstellung']) < max(df2['Wertstellung']):
@@ -263,8 +263,8 @@ class BankAccount:
         df2_expenses, _ = self.total_expenses(df2)
         
         diff = {}
-        for category in self.categories:
-            diff[category] =(2*int(df1_lastest)-1)*(df1_expenses[category]- df2_expenses[category])
+        for category in self.labels:#self.categories:
+            diff[category] = (2*int(df1_lastest)-1)*(df1_expenses[category] - df2_expenses[category])
         return diff
        
     def load_keywords_from_db(self, path='database.db'):
@@ -272,15 +272,15 @@ class BankAccount:
         if all(list(map(lambda x: Path(path+x).is_file(),extenstions))):
             database        = shelve.open(path)
             self.db         = dict(database)
-            self.categories = list(self.db.keys())
-            self.categories.append('Rent')
-            self.categories.append('None')
+            #self.categories = list(self.db.keys())
+            #self.categories.append('Rent')
+            #self.categories.append('None')
         else:
             print('Could not find a file under the given path:', path)
             raise ValueError('Could not find a file under the given path: ' + path)
     
-    def save_data(self,path):
-        self.data.to_csv(path,sep=';',quoting=int(True), encoding ='latin-1')
+    def save_data(self, path):
+        self.data.to_csv(path, sep=';', quoting=int(True), encoding='latin-1')
         
         with open(path, "r") as f:
             lines = f.readlines()
@@ -290,15 +290,14 @@ class BankAccount:
                 f.write(line)
             for line in lines:
                 f.write(line)
-        
-      
+
     def erase_meta_data(self):
         with open(self.data_latest_file, "r", encoding='latin_1') as f:
             lines = f.readlines()
     
         header_idx = -1
         for i, line in enumerate(lines):
-            if np.min([line.find('Buchungstag'),line.find('Wertstellung'),line.find('BLZ')])> -1:
+            if np.min([line.find('Buchungstag'), line.find('Wertstellung'), line.find('BLZ')])> -1:
                 header_idx = i
         
         if header_idx > -1:
@@ -380,7 +379,7 @@ class BankAccount:
         Raises:
             ValueError: Raised when label is not a string found in self.categories.
         """
-        if label not in self.categories:
+        if label not in self.labels:#self.categories:
             raise ValueError(
                 'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
 

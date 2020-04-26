@@ -11,7 +11,7 @@
     "Mandatsreferenz" :  null,
     "Kundenreferenz" :  null
   },
-  "Grocery" :
+  "Groceries" :
   {
     "Compose" : "or",
     "Buchungstext" : null,
@@ -177,6 +177,18 @@
     "Compose" : null,
     "Buchungstext" : null,
     "Auftraggeber / Beguenstigter" : ["TXMAXX", "HILFIGER", "H+M", "ZARA"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Non-Food":
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : null,
     "Verwendungszweck" :  null,
     "Kontonummer" :  null,
     "BLZ" :  null,

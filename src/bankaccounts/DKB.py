@@ -22,7 +22,7 @@ import helper as helper
 import matplotlib
 import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
-import database  as database
+import jsonInterpreter as jsonInterpreter
 
 class DKB(base.BankAccount):
     def __init__(self,
@@ -30,6 +30,7 @@ class DKB(base.BankAccount):
                  pre_labeled: bool = False,
                  other_data_files: List[str] = [],
                  database='database/database.db',
+                 new_keywords='/home/luis/git/Bank-account-parser/database/keywords.json',
                  encoding='latin_1'):
         register_matplotlib_converters()
         super().__init__(encoding)
@@ -41,10 +42,9 @@ class DKB(base.BankAccount):
         self.database = database
         self.load_keywords_from_db(self.database)
         print('Loading new database...\t\t\t', end='')
-        self.keywords = '/home/luis/git/Bank-account-parser/database/keywords.json'
-        print(self.keywords)
-        self.new_db = database.Database(self.keywords)
-        print('done!')
+        self.new_keywords = new_keywords
+        self.new_db = jsonInterpreter.Database(self.new_keywords)
+        self.labels = self.new_db.labels
         self.pre_labeled = pre_labeled
         latest_data_file_compressed_path = self.erase_meta_data()
 
@@ -70,6 +70,8 @@ class DKB(base.BankAccount):
             lines = f.readlines()
 
         for line in lines:
+            if self.has_balance_col and self.has_transaction_label_col:
+                break
             if 'Balance' in line:
                 self.has_balance_col = True
             if 'Transaction Label' in line:
@@ -208,8 +210,6 @@ class DKB(base.BankAccount):
         
         if 'None' not in self.data['Transaction Label'].value_counts().index:
             print('In total', "{:.2f}".format(100), "% of all transactions have labels.")
-            if 'None' in self.categories:
-                self.categories.remove('None')
             print('')
         else:
             None_idx = list(self.data['Transaction Label'].value_counts().index).index('None')
@@ -246,9 +246,9 @@ class DKB(base.BankAccount):
         if end is None:
             end = self.end_date
 
-        if category not in self.categories:
+        if category not in self.labels:# self.categories:
             raise ValueError(
-                'This is not a valid label. Please choose one from the following: ' + ', '.join(self.categories))
+                'This is not a valid label. Please choose one from the following: ' + ', '.join(self.labels))#self.categories))
 
         df_trans = self.get_months(start, end, use_daily_table=False)
         return df_trans[df_trans['Transaction Label'] == category]
@@ -273,8 +273,8 @@ class DKB(base.BankAccount):
         if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
             database = shelve.open(path)
             self.db = dict(database)
-            self.categories = list(self.db.keys())
-            self.categories.extend(['Rent', 'None', 'Private'])
+            #self.categories = list(self.db.keys())
+            #self.categories.extend(['Rent', 'None', 'Private'])
         else:
             raise ValueError('Could not find a file under the given path: ' + path)
 
@@ -284,7 +284,11 @@ class DKB(base.BankAccount):
         Returns:
             All known categories ('Transaction Labels') as a list of strings
         """
-        return self.categories
+        return self.labels#self.categories
+
+    def all_labels(self) -> List[str]:
+        "This functions is a copy of all_categories"
+        return self.labels
 
     def save_data(self, path: str) -> bool:
         """
@@ -318,42 +322,33 @@ class DKB(base.BankAccount):
         print('The data was successfully saved under this path:', path)
         return True
 
-    def label_rows(self, path: str = '') -> bool:
-        """
-        This function adds labels to each transaction in self.data. Basis is the keyword database. Previously labeled
-        entries are not labeled again. So far the keywords stored in the database file are concatenated via 'or/|',
-        this implies any labeling rule that uses 'and/&' has to be added manually like it is done with the label 'Rent'.
-
-        Args:
-            path location where the database is stored
-
-        Returns:
-            True if the labeling was successful
-
-        Raises:
-            ValueError: When no matching file can be found at the input path
-
-        """
+    def label_rows(self):
         print('Adding labels to transactions...\t\t\t', end='')
-        if path == '':
-            path = self.database
-        self.load_keywords_from_db(path)
         for idx, row in self.data.iterrows():
             row_df = pd.DataFrame(row).T
-
             if row_df.loc[idx, 'Transaction Label'] != 'None':
                 continue
-            else:
-                for key in (self.db).keys():
-                    label = key
-                    for cat_key in self.db[key].keys():
-                        col_name = cat_key
-                        if row_df[col_name].str.contains("|".join(self.db[key][cat_key]), case=False, na=False).values[
-                            0]:
-                            self.data.loc[idx, 'Transaction Label'] = label
+            for key in self.new_db.data.keys():
+                label = key
+                compose = self.new_db.data[label]['Compose']
+                result_per_column = []
+                for col_name in self.new_db.data[label]:
+                    if col_name == 'Compose' or self.new_db.data[label][col_name] is None:
+                        continue
+                    result_per_column.append(row_df[col_name].str.contains("|".join(self.new_db.data[label][col_name]),
+                                                                           case=False, na=False).values[0])
+                if len(result_per_column) == 0:
+                    continue
+                if compose == 'and':
+                    if all(result_per_column):
+                        self.data.loc[idx, 'Transaction Label'] = label
+                elif compose == 'or':
+                    if any(result_per_column):
+                        self.data.loc[idx, 'Transaction Label'] = label
+                elif compose is None:
+                    if any(result_per_column):
+                        self.data.loc[idx, 'Transaction Label'] = label
 
-                if helper.is_rent(row_df).values[0]:
-                    self.data.loc[idx, 'Transaction Label'] = 'Rent'
         print('done!')
         return True
 
@@ -432,8 +427,8 @@ class DKB(base.BankAccount):
         if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
             database = shelve.open(path)
             self.db = dict(database)
-            self.categories = list(self.db.keys())
-            self.categories.extend(['Rent', 'None', 'Private'])
+            #self.categories = list(self.db.keys())
+            #self.categories.extend(['Rent', 'None', 'Private'])
         else:
             raise ValueError('Could not find a file under the given path: ' + path)
 
@@ -499,8 +494,8 @@ class DKB(base.BankAccount):
         if all(list(map(lambda x: Path(path + x).is_file(), extensions))):
             database = shelve.open(path)
             database[new] = database[old]
-            self.categories = list(self.db.keys())
-            self.categories.extend(['Rent', 'None', 'Private'])
+            #self.categories = list(self.db.keys())
+            #self.categories.extend(['Rent', 'None', 'Private'])
             self.load_keywords_from_db()
             self.change_category(old, new)
             user_input = input('Do you want to delete the category: ' + old + '[y/n]')
@@ -508,3 +503,42 @@ class DKB(base.BankAccount):
                 self.pop_category(old)
         else:
             raise ValueError('Could not find a file under the given path: ' + path)
+
+"""
+    def label_rows(self, path: str = '') -> bool:
+        This function adds labels to each transaction in self.data. Basis is the keyword database. Previously labeled
+        entries are not labeled again. So far the keywords stored in the database file are concatenated via 'or/|',
+        this implies any labeling rule that uses 'and/&' has to be added manually like it is done with the label 'Rent'.
+
+        Args:
+            path location where the database is stored
+
+        Returns:
+            True if the labeling was successful
+
+        Raises:
+            ValueError: When no matching file can be found at the input path
+
+        print('Adding labels to transactions...\t\t\t', end='')
+        if path == '':
+            path = self.database
+        self.load_keywords_from_db(path)
+        for idx, row in self.data.iterrows():
+            row_df = pd.DataFrame(row).T
+
+            if row_df.loc[idx, 'Transaction Label'] != 'None':
+                continue
+            else:
+                for key in (self.db).keys():
+                    label = key
+                    for cat_key in self.db[key].keys():
+                        col_name = cat_key
+                        if row_df[col_name].str.contains("|".join(self.db[key][cat_key]), case=False, na=False).values[
+                            0]:
+                            self.data.loc[idx, 'Transaction Label'] = label
+
+                if helper.is_rent(row_df).values[0]:
+                    self.data.loc[idx, 'Transaction Label'] = 'Rent'
+        print('done!')
+        return True
+"""
