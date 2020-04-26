@@ -1,0 +1,199 @@
+{
+  "Income" :
+  {
+    "Compose" : "or",
+    "Buchungstext" : ["Gehalt"],
+    "Auftraggeber / Beguenstigter" : null,
+    "Verwendungszweck" :  ["Unterhalt", "Semesterbeitrag"],
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Groceries" :
+  {
+    "Compose" : "or",
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["REWE", "EDEKA", "PENNY", "KAUFLAND", "NETTO", "ALECO GMBH", "ALDI",
+                                      "Lebensmittel", "LIDL", "E-CENTER", "DM FIL", "ROSSMANN", "MARKT"],
+    "Verwendungszweck" :  ["REWE"],
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Dining" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["RESTAURANT", "IMBISS", "CAFE", "MCDONALDS", "SUBWAY", "BURGER KING", "GASTRO",
+                                      "VAPIANO", "BAE?CK", "LOSTERIA", "COFFEE", "SUSHI", "PIZZA", "MENSACARD",
+                                      "DEAN + DAVID"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Mobil phone / Internet" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["VODAFONE", "DRILLISCH", "O2", "TELEKOM", "1&1", "CONGSTAR",
+                                      "MOBILCOM-DEBITEL", "KLARMOBIL"],
+    "Verwendungszweck" : null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Travel" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["HOTEL", "BAHN AG", "DB AG", "FERNVERKEHR", "MOTEL ONE", "JUGENDHERBERG",
+                                      "DB VERTRIEB"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Credit card" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["KREDITKARTENABRECHNUNG", "DKB VISACARD"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Car" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["AUTO", "SHELL", "TANK", "ESSO", "JET", "AVIA", "TOTAL SERVICE", "AGIP","OIL"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Insurance" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["VERSICHERUNG", "BUNDESKASSE IN KIEL", "HKK", "BKK"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Culture" :
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["SPORTVEREIN", "TURNVEREIN", "ENTERTAIN", "SPORT", "FITNESS", "CLUB", "ZEITUNG"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "End of Quater":
+  {
+    "Compose" : null,
+    "Buchungstext" : ["ABSCHLUSS"],
+    "Auftraggeber / Beguenstigter" : null,
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Medical":
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["APOTHEKE"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Housing":
+  {
+    "Compose" : "and",
+    "Buchungstext" : ["!GUTSCHRIFT"],
+    "Auftraggeber / Beguenstigter" : null,
+    "Verwendungszweck" :  ["MIET"],
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Private":
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : null,
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "None":
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : null,
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+  "Fashion":
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : ["TXMAXX", "HILFIGER", "H+M", "ZARA"],
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  },
+    "Non-Food":
+  {
+    "Compose" : null,
+    "Buchungstext" : null,
+    "Auftraggeber / Beguenstigter" : null,
+    "Verwendungszweck" :  null,
+    "Kontonummer" :  null,
+    "BLZ" :  null,
+    "Glaeubiger-ID" :  null,
+    "Mandatsreferenz" :  null,
+    "Kundenreferenz" :  null
+  }
+}

@@ -1,0 +1,10 @@
+layer_prefix = ' >  '
+dashed_line = '--------------------------------------------------------------'
+calling_DKB_constructor = '\nCalling DKB constructor\n' + dashed_line
+calling_base_constructor = 'Calling base class constructor...'
+add_transaction_labels = 'Adding a transaction label column...'
+add_daily_balance_col = 'Adding a column with the daily balance...'
+check_DKB_format = 'Checking whether table is in expected DKB-format...'
+adding_transaction_labels = 'Adding labels to transactions...'
+sort_by_Wertstellung = 'Sorting the table based on Wertstellung-column...'
+generating_meta = 'Generating meta data...'
