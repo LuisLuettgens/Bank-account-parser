@@ -4,28 +4,31 @@ Created on Wed Apr  8 12:31:58 2020
 
 @author: LUL3FE
 """
+import functools
+import os
+import re
+import shelve
+import string
 import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+from pandas.plotting import register_matplotlib_converters
+
+import database as database
+import helper as helper
+import plotting as plotting
+
 sys.path.append('/home/luis/git/Bank-account-parser/src/bankaccounts')
 sys.path.append('/home/luis/git/Bank-account-parser/src/tests')
 sys.path.append('/home/luis/git/Bank-account-parser/src/plotting')
 sys.path.append('/home/luis/git/Bank-account-parser/src/utils') 
 
-import numpy as np
-import os
-import re
-import string
-import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
-from pathlib import Path
-import functools
-import helper as helper
-from pandas.plotting import register_matplotlib_converters
-import shelve
-from dateutil.relativedelta import relativedelta
-import plotting as plotting
-import database  as database
 
 class BankAccount:
     def __init__(self,encoding):

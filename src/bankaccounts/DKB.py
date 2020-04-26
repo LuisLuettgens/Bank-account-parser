@@ -42,6 +42,7 @@ class DKB(base.BankAccount):
         self.load_keywords_from_db(self.database)
         print('Loading new database...\t\t\t', end='')
         self.keywords = '/home/luis/git/Bank-account-parser/database/keywords.json'
+        print(self.keywords)
         self.new_db = database.Database(self.keywords)
         print('done!')
         self.pre_labeled = pre_labeled
