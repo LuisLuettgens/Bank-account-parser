@@ -1,10 +1,14 @@
 import numpy as np
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from dateutil.relativedelta import relativedelta
+import re
 
+def summary(bank_account, start, end, tag):
+    months = mdates.MonthLocator()  # every month
+    months_fmt = mdates.DateFormatter('%M')
 
-def summary(bank_account, start, end):
     # preparation
     df = bank_account.get_months(start, end)
     df_trans = bank_account.get_months(start, end, use_daily_table=False)
@@ -13,11 +17,23 @@ def summary(bank_account, start, end):
     Wert = df['Wertstellung']
     Bal = df['Balance']
     Betrag = df['Betrag (EUR)']
-        
-    #TODO divided by zero wgen len wert smaller than 6
-    dates = list(Wert[0:-1:int(np.floor(len(Wert)/6))])
-    xlabels = [x.date().strftime('%Y-%m-%d') for x in dates]
-    
+
+    first = min(df_trans['Wertstellung'])
+    last = max(df_trans['Wertstellung'])
+
+    if re.match(r'^Q\d/(\d{4}|\d{2})$', tag):
+        quarter_i = int(tag.split('/')[0][1])
+        year_i = int(tag.split('/')[1])
+        x_label = []
+        if quarter_i < 4:
+            for i in range(1, 5):
+                x_label.append(str((quarter_i-1)*4+i-(quarter_i-1))+'-'+str(year_i))
+        else:
+            for i in range(1, 5):
+                if i < 4:
+                    x_label.append(str((quarter_i - 1) * 4 + i - (quarter_i - 1)) + '-' + str(year_i))
+                else:
+                    x_label.append(str(1) + '-' + str(year_i+1))
     # Expenses per month plot
     expenses, total_expenses = bank_account.cluster_expenses(*bank_account.total_expenses(df_trans))
 
@@ -36,17 +52,21 @@ def summary(bank_account, start, end):
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(n_cols*10, n_rows*10))
         
     # Accounts balance plot
+    # format the ticks
+    axes[0, 0].xaxis.set_major_locator(months)
+    axes[0, 0].xaxis.set_major_formatter(months_fmt)
+    axes[0, 0].format_xdata = mdates.DateFormatter('%Y-%m-%d')
     axes[0, 0].plot(Wert, Bal)
-    axes[0, 0].set_xticklabels(xlabels, rotation=20)
     axes[0, 0].set_title("Temporal progression of the account balance")
     axes[0, 0].set_ylabel("EUR")
-    axes[0, 0].xaxis.set_major_locator(plt.MaxNLocator(6))
+    axes[0, 0].set_xticklabels(x_label)
+    axes[0, 0].grid()
 
     # Account transaction
     axes[0, 1].plot(Wert, Betrag)
-    axes[0, 1].set_xticklabels(xlabels, rotation=20)
     axes[0, 1].set_title("Temporal progression of transactions")
     axes[0, 1].set_ylabel("EUR")
+    axes[0, 1].grid()
     
     # Expenses per category
     axes[1, 0].pie(expenses.values(), labels=expenses.keys(), autopct='%1.1f%%', shadow=True, startangle=90)
@@ -64,9 +84,6 @@ def summary(bank_account, start, end):
     total_salary = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] == 'Salary')]
     other_income = df_trans.loc[(df_trans['Betrag (EUR)'] > 0) & (df_trans['Transaction Label'] != 'Salary')]
     expenses = df_trans.loc[(df_trans['Betrag (EUR)'] < 0)]
-        
-    first = min(df_trans['Wertstellung'])
-    last = max(df_trans['Wertstellung'])
         
     current = first
     n_months = 0
@@ -90,7 +107,7 @@ def summary(bank_account, start, end):
         next_month = current_month % 12+1
         next_year = current_year
         if next_month == 1:
-            next_year += 1  
+            next_year += 1
 
         from_date = datetime(current_year, current_month, 1)
         to_date = datetime(next_year, next_month, 1)

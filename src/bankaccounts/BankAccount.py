@@ -37,7 +37,8 @@ class BankAccount:
         Creates a new file that is a copy of path, but  all occurrences of german umlauts have been replaced.
 
         Args:
-            path: path to the file
+            path:       path to the file
+            encoding:   the encoding used to read the file
 
         Returns:
             A string to the copy
@@ -90,7 +91,7 @@ class BankAccount:
     ################################################################################################
 
     def summary(self, start: datetime, end: datetime) -> bool:
-        return plotting.summary(self, start, end)
+        return summary(self, start, end)
 
     def summary_quarter(self, quarter_n_year: str) -> bool:
         if not re.match(r'^Q\d/(\d{4}|\d{2})$', quarter_n_year):
@@ -111,7 +112,7 @@ class BankAccount:
         else:
             Q_end = datetime(year_i+1, 1, 1) - timedelta(days=1)
 
-        return summary(self, Q_start, Q_end)
+        return summary(self, Q_start, Q_end, tag=quarter_n_year)
 
     def summary_this_quarter(self) -> bool:
         year = str(datetime.now().year)
@@ -142,7 +143,7 @@ class BankAccount:
             M_end = datetime(year, month+1, 1) - timedelta(days=1)
         else:
             M_end = datetime(year+1, 1, 1) - timedelta(days=1)
-        return plotting.summary(self, M_start, M_end)
+        return summary(self, M_start, M_end)
 
     def summary_this_month(self) -> bool:
         year = str(datetime.now().year)
