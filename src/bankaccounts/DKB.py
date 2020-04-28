@@ -310,31 +310,6 @@ class DKB(base.BankAccount):
         print('The data was successfully saved under this path:', path)
         return True
 
-    def add_balance_col(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-            Based on the self.current_balance and the transactions in columns 'Betrag (EUR)' of data the balance for
-            each row is reverse engineered.
-        Args:
-            data: the DataFrame that shall be augmented with a 'Balance' column
-
-        Returns:
-            The input DataFrame with an additional column named 'Balance'
-
-        Raises:
-            An KeyError when the input DataFrame has no column with name 'Betrag (EUR)'.
-        """
-
-        if 'Betrag (EUR)' not in data.columns:
-            raise KeyError(
-                'The input DataFrame has no column named: ' + 'Betrag (EUR)' + '. Please make sure it exists.')
-
-        s = [self.current_balance]
-        for i, transaction in enumerate(data['Betrag (EUR)']):
-            s.append(s[i] - transaction)
-        del s[-1]
-        data['Balance'] = s
-        return data
-
     def get_row(self, idx: int) -> pd.DataFrame:
         """
             Getter function for rows in self.data
