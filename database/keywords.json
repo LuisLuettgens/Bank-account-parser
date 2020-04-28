@@ -188,7 +188,7 @@
   {
     "Compose" : null,
     "Buchungstext" : null,
-    "Auftraggeber / Beguenstigter" : null,
+    "Auftraggeber / Beguenstigter" : ["AMAZON", "SATURN"],
     "Verwendungszweck" :  null,
     "Kontonummer" :  null,
     "BLZ" :  null,

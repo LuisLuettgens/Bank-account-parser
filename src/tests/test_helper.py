@@ -1,12 +1,9 @@
-#import sys
-#sys.path.append('/home/runner/work/Bank-account-parser/Bank-account-parser/src')
-
 import helper
 from datetime import datetime, timedelta
 import pandas as pd
 import random
 import pytest
-import os
+
 
 def test_is_valid_csv_file(tmp_path):
     
@@ -22,27 +19,24 @@ def test_is_valid_csv_file(tmp_path):
     test_CSV = d / "hello.CSV"
     test_CSV.write_text("test")
 
-
     # Test 1: file not found
-    file_not_found_exeption = str(tmp_path)
+    file_not_found_exception = str(tmp_path)
 
     with pytest.raises(ValueError) as excinfo:
 
-        helper.is_valid_csv_file(file_not_found_exeption)
+        helper.is_valid_csv_file(file_not_found_exception)
 
-    assert  'The path: ' + file_not_found_exeption + \
-            ' cannot be resolved to a valid file. Please check the input path.' in str(excinfo.value)
-
+    assert 'The path: ' + file_not_found_exception + \
+           ' cannot be resolved to a valid file. Please check the input path.' in str(excinfo.value)
     
     # Test 2: file not a csv
-    not_a_csv_file_exeption = str(test_txt)
+    not_a_csv_file_exception = str(test_txt)
 
     with pytest.raises(ValueError) as excinfo:
         
-        helper.is_valid_csv_file(not_a_csv_file_exeption)
+        helper.is_valid_csv_file(not_a_csv_file_exception)
     
-    assert  'The input file does not appear to be a csv file. Please check the file-suffix.' in str(excinfo.value)   
-
+    assert 'The input file does not appear to be a csv file. Please check the file-suffix.' in str(excinfo.value)
     
     # Test 3: file is csv (lower cases)
     correct_file = str(test_csv)
@@ -54,12 +48,13 @@ def test_is_valid_csv_file(tmp_path):
     
     assert helper.is_valid_csv_file(correct_file2) is True
 
+
 def test_generate_days():
     # Test 1: start after end
-    start1  = pd.Timestamp(datetime.now())
+    start1 = pd.Timestamp(datetime.now())
     end1 = pd.Timestamp(start1 - timedelta(days=1))
         
-    result1 = helper.generate_days(start1,end1)
+    result1 = helper.generate_days(start1, end1)
     expected_result1 = []
 
     assert result1 == expected_result1

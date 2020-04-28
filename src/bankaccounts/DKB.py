@@ -5,19 +5,17 @@ Created on Fri Apr 10 12:52:19 2020
 @author: LUL3FE
 """
 
-import functools
 import os
+import re
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
 
 import BankAccount as base
-import helper as helper
 import parameters as pm
-
 
 
 class DKB(base.BankAccount):
@@ -28,12 +26,17 @@ class DKB(base.BankAccount):
                  encoding='latin_1'):
         register_matplotlib_converters()
         print(pm.calling_DKB_constructor)
-        super().__init__(encoding=encoding, keywords_file=keywords_file)
-        self.file = self.replace_german_umlauts(file)
-        self.dfs = []
-        self.get_meta_info()
+        super().__init__(encoding=encoding,
+                         keywords_file=keywords_file,
+                         file=self.replace_german_umlauts(file, encoding))
+        meta_data = self.get_meta_info()
+        self.iban = meta_data['IBAN']
+        self.currency = meta_data['Currency']
+        self.current_balance = meta_data['Current balance']
+        self.bank_account_type = meta_data['BA_type']
+
         self.pre_labeled = pre_labeled
-        file_compressed = self.erase_meta_data()
+        file_compressed, self.meta_data_lines = self.erase_meta_data()
 
         self.DKB_header_unlabeled_list = ['Buchungstag', 'Wertstellung', 'Buchungstext', 'Auftraggeber / Beguenstigter',
                                           'Verwendungszweck', 'Kontonummer', 'BLZ', 'Betrag (EUR)', 'Glaeubiger-ID',
@@ -48,7 +51,9 @@ class DKB(base.BankAccount):
         col_types = {'Betrag (EUR)': np.float, 'Balance': np.float}
 
         self.date_format = '%d.%m.%Y'
-        date_parser_dkb = lambda x: datetime.strptime(str(x), self.date_format)
+
+        def date_parser_dkb(x):
+            return datetime.strptime(str(x), self.date_format)
 
         self.has_transaction_label_col = False
         self.has_balance_col = False
@@ -114,6 +119,44 @@ class DKB(base.BankAccount):
         del self.data['index']
         print(pm.dashed_line)
 
+    def get_meta_info(self):
+        balance_line = ''
+        IBAN_line = ''
+
+        print(pm.layer_prefix + 'Generating meta data...')
+        meta_data = {}
+
+        with open(self.file, "r", encoding='latin_1') as f:
+            lines = f.readlines()
+        IBAN_line_pattern = r'.+Kontonummer.+'
+        balance_line_pattern = r'.+Kontostand.+'
+
+        found_IBAN_line = False
+        found_balance_line = False
+
+        for line in lines:
+            if not found_balance_line and re.findall(balance_line_pattern, line):
+                found_balance_line = True
+                balance_line = line
+            if not found_IBAN_line and re.findall(IBAN_line_pattern, line):
+                found_IBAN_line = True
+                IBAN_line = line
+
+        if found_balance_line:
+            balance_pattern = r'\d{0,7}\.\d{0,3},\d{0,2}\sEUR'
+            current_balance_line_split = re.findall(balance_pattern, balance_line)[0].split()
+            meta_data['Balance'] = current_balance_line_split[0]
+            meta_data['Currency'] = current_balance_line_split[1]
+
+        if found_IBAN_line:
+            IBAN_pattern = r'[\d|\w]+'
+            current_balance_line = re.findall(IBAN_pattern, IBAN_line)
+            meta_data['IBAN'] = current_balance_line[1]
+            meta_data['BA_type'] = current_balance_line[2]
+
+            meta_data['Current balance'] = float(meta_data['Balance'].replace('.', '').replace(',', '.'))
+        return meta_data
+
     def prep_table(self, sort_by='Wertstellung', ascending=False) -> None:
         """
         This function sorts self.data by the column with name sort_by. If the entries don't have a label a 'Transaction
@@ -141,7 +184,8 @@ class DKB(base.BankAccount):
 
     def valid_table(self) -> None:
         """
-        This function checks whether all expected column names appear in self.data and calls self.prep_table() afterwards.
+        This function checks whether all expected column names appear in self.data and calls self.prep_table()
+        afterwards.
 
         Args:
             self:    An object of the class DKB
@@ -168,8 +212,6 @@ class DKB(base.BankAccount):
                 missing_cols) + ' do not appear as a column names in the provided csv. Please make sure that '
                                 'it exists and try again...')
 
-
-        pd.set_option('display.max_columns', None)
         self.prep_table()
 
     def info_labeled(self) -> None:
@@ -191,8 +233,8 @@ class DKB(base.BankAccount):
             transaction_label_values = self.data['Transaction Label'].value_counts().values[None_idx]
 
             print('In total',
-                  "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100)
-                  , "% of all transactions have labels.")
+                  "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100),
+                  "% of all transactions have labels.")
 
             print('')
 
@@ -203,13 +245,14 @@ class DKB(base.BankAccount):
 
         Args:
             self:      An object of the class DKB.
-            category: The label that shall be filtered for
+            category:  The label that shall be filtered for
             start:     The start datetime that is used for that query (default = None)
             end:       The end datetime that is used for that query (default = None)
 
 
         Returns:
-            A DataFrame containing only entries from the closed interval [start, end] with 'Transaction Label' equal to categorie.
+            A DataFrame containing only entries from the closed interval [start, end] with 'Transaction Label' equal to
+            category.
 
         Raises:
             ValueError: Raised when category does not appear in self.labels.
@@ -222,13 +265,17 @@ class DKB(base.BankAccount):
             end = self.end_date
 
         if category not in self.labels:
-            raise ValueError('This is not a valid label. Please choose one from the following: ' + ', '.join(self.labels))
+            raise ValueError('This is not a valid lab   el. Please choose one from the following: ' +
+                             ', '.join(self.labels))
 
         df_trans = self.get_months(start, end, use_daily_table=False)
         return df_trans[df_trans['Transaction Label'] == category]
 
     def all_labels(self) -> List[str]:
-        "This functions is a copy of all_categories"
+        """
+            This functions is a copy of all_categories
+        """
+
         return self.labels
 
     def save_data(self, path: str) -> bool:
@@ -298,3 +345,26 @@ class DKB(base.BankAccount):
             returns the row with index 'idx' as a DataFrame
         """
         return pd.DataFrame(self.data.iloc[idx]).T
+
+    def erase_meta_data(self) -> Tuple[str, List[str]]:
+        """
+
+        Returns:
+
+        """
+        with open(self.file, "r", encoding='latin_1') as f:
+            lines = f.readlines()
+
+        header_idx = -1
+        for i, line in enumerate(lines):
+            if np.min([line.find('Buchungstag'), line.find('Wertstellung'), line.find('BLZ')]) > -1:
+                header_idx = i
+
+        if header_idx > -1:
+            meta_data_lines = lines[:header_idx]
+            lines = lines[header_idx:]
+
+        with open(self.file + 'wo_meta.csv', "w") as f:
+            for line in lines:
+                f.write(line)
+        return self.file + 'wo_meta.csv', meta_data_lines
