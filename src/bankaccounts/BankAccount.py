@@ -143,7 +143,7 @@ class BankAccount:
             M_end = datetime(year, month+1, 1) - timedelta(days=1)
         else:
             M_end = datetime(year+1, 1, 1) - timedelta(days=1)
-        return summary(self, M_start, M_end)
+        return summary(self, M_start, M_end, month_n_year)
 
     def summary_this_month(self) -> bool:
         year = str(datetime.now().year)
