@@ -8,7 +8,7 @@ Created on Fri Apr 21 16:25:19 2020
 import numpy as np
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
-
+import parameters as pm
 import BankAccount as base
 
 
@@ -22,11 +22,11 @@ class Sparkasse(base.BankAccount):
         register_matplotlib_converters()
         super().__init__(encoding=encoding,
                          keywords_file=keywords_file,
-                         file=self.replace_german_umlauts(file, encoding))
+                         file=self.replace_german_umlauts(file, encoding),
+                         pre_labeled=pre_labeled)
         print('')
 
         self.current_balance = current_balance
-        self.pre_labeled = pre_labeled
 
         use_cols = ['Auftragskonto', 'Buchungstag', 'Valutadatum', 'Buchungstext', 'Verwendungszweck',
                     'Glaeubiger ID', 'Mandatsreferenz', 'Kundenreferenz (End-to-End)', 'Sammlerreferenz',

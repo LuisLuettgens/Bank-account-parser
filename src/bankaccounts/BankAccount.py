@@ -17,10 +17,9 @@ import jsonInterpreter as jsonInterpreter
 
 
 class BankAccount:
-    def __init__(self, encoding, keywords_file, file):
+    def __init__(self, encoding, keywords_file, file, pre_labeled):
         self.file = file
 
-        # TODO correct this
         self.data = pd.DataFrame({})
         self.daily_data = pd.DataFrame({})
 
@@ -31,6 +30,8 @@ class BankAccount:
         # parse keywords_file
         self.db = jsonInterpreter.Database(keywords_file)
         self.labels = self.db.labels
+
+        self.pre_labeled = pre_labeled
 
     def replace_german_umlauts(self, path: str, encoding: str) -> str:
         """
@@ -351,3 +352,59 @@ class BankAccount:
         del s[-1]
         data['Balance'] = s
         return data
+
+    def valid_table(self, tag) -> None:
+        """
+        This function checks whether all expected column names appear in self.data and calls self.prep_table()
+        afterwards.
+
+        Args:
+            self:    An object of the class DKB
+
+        Returns:
+            None
+        Raises:
+            ValueError: Raised when one of the column names is missing.
+        """
+        print(pm.layer_prefix+'Checking whether table is in expected DKB-format...')
+
+        if self.pre_labeled:
+            missing_cols = self.DKB_header_labeled.difference(self.data.columns)
+        else:
+            missing_cols = self.DKB_header_unlabeled.difference(self.data.columns)
+
+        if len(missing_cols) == 1:
+            raise ValueError('The column: ' + ', '.join(
+                missing_cols) + ' does not appear as a column name in the provided csv. Please make sure that '
+                                'it exists and try again...')
+        ##
+        if len(missing_cols) > 1:
+            raise ValueError('The columns: ' + ', '.join(
+                missing_cols) + ' do not appear as a column names in the provided csv. Please make sure that '
+                                'it exists and try again...')
+
+        self.prep_table()
+
+    def info_labeled(self) -> None:
+        """
+        This function prints the ratio of labeled entries in the DataFrame.
+
+        Args:
+            self:    An object of the class DKB
+
+        Returns:
+            None
+        """
+
+        if 'None' not in self.data['Transaction Label'].value_counts().index:
+            print('In total', "{:.2f}".format(100), "% of all transactions have labels.")
+            print('')
+        else:
+            None_idx = list(self.data['Transaction Label'].value_counts().index).index('None')
+            transaction_label_values = self.data['Transaction Label'].value_counts().values[None_idx]
+
+            print('In total',
+                  "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100),
+                  "% of all transactions have labels.")
+
+            print('')

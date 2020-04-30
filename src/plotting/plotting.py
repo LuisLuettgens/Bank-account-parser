@@ -5,6 +5,7 @@ import matplotlib.dates as mdates
 from dateutil.relativedelta import relativedelta
 import re
 
+
 def summary(bank_account, start, end, tag):
     months = mdates.MonthLocator()  # every month
     months_fmt = mdates.DateFormatter('%M')
@@ -21,10 +22,11 @@ def summary(bank_account, start, end, tag):
     first = min(df_trans['Wertstellung'])
     last = max(df_trans['Wertstellung'])
 
+    x_label = []
+
     if re.match(r'^Q\d/(\d{4}|\d{2})$', tag):
         quarter_i = int(tag.split('/')[0][1])
         year_i = int(tag.split('/')[1]) % 2000+2000
-        x_label = []
         if quarter_i < 4:
             for i in range(1, 5):
                 x_label.append(str((quarter_i-1)*4+i-(quarter_i-1))+'-'+str(year_i))
@@ -121,14 +123,8 @@ def summary(bank_account, start, end, tag):
 
     xlabels_dates = []
 
-    salary_slice_tuple = tuple()
-    other_income_slice_tuple = tuple()
-    expenses_slice_tuple = tuple()
-    xlabels_dates_tuple = tuple()
-
     for i in range(n_months):
         xlabels_dates.append(str(current_month) + '-' + str(current_year))
-        xlabels_dates_tuple += tuple(xlabels_dates)
         next_month = current_month % 12+1
         next_year = current_year
         if next_month == 1:
@@ -165,8 +161,8 @@ def summary(bank_account, start, end, tag):
     axes[2, 0].axhline(0, color='black')
     axes[2, 0].grid(axis='y')
 
-    axes[2, 1].set_visible(False
-                          )
+    axes[2, 1].set_visible(False)
+
     # Set title
     title = "".join(['Summary for period: ', start.date().strftime('%Y-%m-%d'), ' - ', end.date().strftime('%Y-%m-%d')])
     fig.suptitle(title, fontsize=16)

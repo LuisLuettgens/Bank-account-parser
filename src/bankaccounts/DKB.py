@@ -17,7 +17,6 @@ from pandas.plotting import register_matplotlib_converters
 import BankAccount as base
 import parameters as pm
 
-
 class DKB(base.BankAccount):
     def __init__(self,
                  file: str,
@@ -28,14 +27,14 @@ class DKB(base.BankAccount):
         print(pm.calling_DKB_constructor)
         super().__init__(encoding=encoding,
                          keywords_file=keywords_file,
-                         file=self.replace_german_umlauts(file, encoding))
+                         file=self.replace_german_umlauts(file, encoding),
+                         pre_labeled=pre_labeled)
         meta_data = self.get_meta_info()
         self.iban = meta_data['IBAN']
         self.currency = meta_data['Currency']
         self.current_balance = meta_data['Current balance']
         self.bank_account_type = meta_data['BA_type']
 
-        self.pre_labeled = pre_labeled
         file_compressed, self.meta_data_lines = self.erase_meta_data()
 
         self.DKB_header_unlabeled_list = ['Buchungstag', 'Wertstellung', 'Buchungstext', 'Auftraggeber / Beguenstigter',
@@ -98,7 +97,7 @@ class DKB(base.BankAccount):
 
         os.remove(file_compressed)
 
-        self.valid_table()
+        self.valid_table(tag='DKB')
         self.data = self.add_balance_col(self.data)
 
         self.daily_data = self.data[['Wertstellung', 'Betrag (EUR)']].groupby('Wertstellung',
@@ -181,62 +180,6 @@ class DKB(base.BankAccount):
         if 'Balance' not in self.data.columns:
             print(pm.layer_prefix+'Adding a column with the daily balance...')
             self.data = self.add_balance_col(self.data)
-
-    def valid_table(self) -> None:
-        """
-        This function checks whether all expected column names appear in self.data and calls self.prep_table()
-        afterwards.
-
-        Args:
-            self:    An object of the class DKB
-
-        Returns:
-            None
-        Raises:
-            ValueError: Raised when one of the column names is missing.
-        """
-        print(pm.layer_prefix+'Checking whether table is in expected DKB-format...')
-
-        if self.pre_labeled:
-            missing_cols = self.DKB_header_labeled.difference(self.data.columns)
-        else:
-            missing_cols = self.DKB_header_unlabeled.difference(self.data.columns)
-
-        if len(missing_cols) == 1:
-            raise ValueError('The column: ' + ', '.join(
-                missing_cols) + ' does not appear as a column name in the provided csv. Please make sure that '
-                                'it exists and try again...')
-        ##
-        if len(missing_cols) > 1:
-            raise ValueError('The columns: ' + ', '.join(
-                missing_cols) + ' do not appear as a column names in the provided csv. Please make sure that '
-                                'it exists and try again...')
-
-        self.prep_table()
-
-    def info_labeled(self) -> None:
-        """
-        This function prints the ratio of labeled entries in the DataFrame.
-
-        Args:
-            self:    An object of the class DKB
-
-        Returns:
-            None
-        """
-
-        if 'None' not in self.data['Transaction Label'].value_counts().index:
-            print('In total', "{:.2f}".format(100), "% of all transactions have labels.")
-            print('')
-        else:
-            None_idx = list(self.data['Transaction Label'].value_counts().index).index('None')
-            transaction_label_values = self.data['Transaction Label'].value_counts().values[None_idx]
-
-            print('In total',
-                  "{:.2f}".format((1 - transaction_label_values / self.data['Transaction Label'].shape[0]) * 100),
-                  "% of all transactions have labels.")
-
-            print('')
 
     def get_label(self, category: str, start: datetime = None, end: datetime = None) -> pd.DataFrame:
         """
@@ -335,6 +278,8 @@ class DKB(base.BankAccount):
             if np.min([line.find('Buchungstag'), line.find('Wertstellung'), line.find('BLZ')]) > -1:
                 header_idx = i
 
+        meta_data_lines = None
+
         if header_idx > -1:
             meta_data_lines = lines[:header_idx]
             lines = lines[header_idx:]
@@ -343,3 +288,9 @@ class DKB(base.BankAccount):
             for line in lines:
                 f.write(line)
         return self.file + 'wo_meta.csv', meta_data_lines
+
+    def merge(self, other_path, pre_labeled=False):
+        other = DKB(other_path, pre_labeled=pre_labeled)
+        self.data = pd.concat([self.data, other.data]).drop_duplicates().reset_index(drop=True)
+        self.daily_data = pd.concat([self.daily_data, other.daily_data]).drop_duplicates().reset_index(drop=True)
+        pass
