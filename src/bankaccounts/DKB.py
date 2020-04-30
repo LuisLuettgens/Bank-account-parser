@@ -17,6 +17,7 @@ from pandas.plotting import register_matplotlib_converters
 import BankAccount as base
 import parameters as pm
 
+
 class DKB(base.BankAccount):
     def __init__(self,
                  file: str,
@@ -290,7 +291,15 @@ class DKB(base.BankAccount):
         return self.file + 'wo_meta.csv', meta_data_lines
 
     def merge(self, other_path, pre_labeled=False):
+        print('Creating other BankAccount...')
+        print()
+        print('--------------------------------------------------------------')
         other = DKB(other_path, pre_labeled=pre_labeled)
-        self.data = pd.concat([self.data, other.data]).drop_duplicates().reset_index(drop=True)
-        self.daily_data = pd.concat([self.daily_data, other.daily_data]).drop_duplicates().reset_index(drop=True)
-        pass
+        print('Merging data...')
+        self.data = pd.concat([self.data, other.data], ignore_index=True, sort=False)
+        self.data.sort_values(by='Wertstellung', ascending=False).drop_duplicates().reset_index(drop=True)
+
+        print('Merging daily data...')
+        self.daily_data = pd.concat([self.daily_data, other.daily_data], ignore_index=True, sort=False)
+        self.daily_data.sort_values(by='Wertstellung', ascending=False).drop_duplicates().reset_index(drop=True)
+        return True
