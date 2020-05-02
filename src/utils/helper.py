@@ -46,7 +46,6 @@ def is_valid_csv_file(path: str) -> bool:
     return True
 
 
-# TODO: check whether code is redundant
 def is_valid_json_file(path: str) -> bool:
     """
     checks if path can be resolved into a csv file.

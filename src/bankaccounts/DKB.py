@@ -28,13 +28,14 @@ class DKB(base.BankAccount):
         print(pm.calling_DKB_constructor)
         super().__init__(encoding=encoding,
                          keywords_file=keywords_file,
-                         file=self.replace_german_umlauts(file, encoding),
+                         file=replace_german_umlauts(file, encoding),
                          pre_labeled=pre_labeled)
         meta_data = self.get_meta_info()
         self.iban = meta_data['IBAN']
         self.currency = meta_data['Currency']
         self.current_balance = meta_data['Current balance']
         self.bank_account_type = meta_data['BA_type']
+        self.CreditCard = None
 
         file_compressed, self.meta_data_lines = self.erase_meta_data()
 
@@ -58,18 +59,7 @@ class DKB(base.BankAccount):
         self.has_transaction_label_col = False
         self.has_balance_col = False
 
-        with open(file, "r", encoding=self.encoding) as f:
-            lines = f.readlines()
-
-        for line in lines:
-            if self.has_balance_col and self.has_transaction_label_col:
-                break
-            if 'Balance' in line:
-                self.has_balance_col = True
-            if 'Transaction Label' in line:
-                self.has_transaction_label_col = True
-
-        if self.has_balance_col and self.has_transaction_label_col:
+        if self.check_trans_n_balance_col():
             self.data = pd.read_csv(file_compressed,
                                     delimiter=';',
                                     encoding=self.encoding,
@@ -108,10 +98,10 @@ class DKB(base.BankAccount):
         self.daily_data = self.update_daily()
 
         if not self.pre_labeled:
-            self.label_rows()
+            self.data = self.label_rows(self.data)
 
         print('')
-        self.info_labeled()
+        self.info_labeled(self.data)
 
         self.start_date = min(self.data['Wertstellung'])
         self.end_date = max(self.data['Wertstellung'])
@@ -157,7 +147,7 @@ class DKB(base.BankAccount):
             meta_data['Current balance'] = float(meta_data['Balance'].replace('.', '').replace(',', '.'))
         return meta_data
 
-    def prep_table(self, sort_by='Wertstellung', ascending=False) -> None:
+    def prep_table(self, sort_by: str = 'Wertstellung', ascending: bool = False) -> None:
         """
         This function sorts self.data by the column with name sort_by. If the entries don't have a label a 'Transaction
         Label' column is added to self.data and calls self.add_balance_col
@@ -303,3 +293,67 @@ class DKB(base.BankAccount):
         self.daily_data = pd.concat([self.daily_data, other.daily_data], ignore_index=True, sort=False)
         self.daily_data.sort_values(by='Wertstellung', ascending=False).drop_duplicates().reset_index(drop=True)
         return True
+
+    def add_CreditCard(self, cc_file):
+        date_format = '%d.%m.%Y'
+
+        print(pm.layer_prefix + 'Parsing credit card meta data...')
+        meta_data = {}
+
+        cc_file_copy = replace_german_umlauts(cc_file, self.encoding)
+
+        self.date_format = '%d.%m.%Y'
+
+        def date_parser_dkb(x):
+            return datetime.strptime(str(x), self.date_format)
+
+        with open(cc_file_copy, "r", encoding='latin_1') as f:
+            lines = f.readlines()
+            meta_data['Card number'] = lines[0].split(';')[1].replace('"', '')
+            meta_data['Start'] = datetime.strptime(lines[2].split(';')[1].replace('"', ''), date_format)
+            meta_data['End'] = datetime.strptime(lines[3].split(';')[1].replace('"', ''), date_format)
+            meta_data['Saldo'] = np.float64(lines[4].split(';')[1]
+                                                    .replace('"', '')
+                                                    .split()[0]
+                                                    .replace('.', '')
+                                                    .replace(',', '.'))
+
+            meta_data['Today'] = datetime.strptime(lines[5].split(';')[1].replace('"', ''), date_format)
+
+        with open('credit_card_wo_meta.csv', "w") as f:
+            for line in lines[7:]:
+                f.write(line)
+
+            df = pd.read_csv('credit_card_wo_meta.csv',
+                             delimiter=';',
+                             encoding=self.encoding,
+                             parse_dates=['Wertstellung', 'Belegdatum'],
+                             date_parser=date_parser_dkb,
+                             usecols=['Umsatz abgerechnet und nicht im Saldo enthalten', 'Wertstellung', 'Belegdatum',
+                                      'Beschreibung', 'Betrag (EUR)', 'Urspruenglicher Betrag'],
+                             decimal=',',
+                             thousands='.',
+                             engine='python')
+
+        s = [meta_data['Saldo']]
+        for i, transaction in enumerate(df['Betrag (EUR)']):
+            s.append(round(s[i] - transaction, 2))
+        del s[-1]
+        df['Balance'] = s
+
+        df['Transaction Label'] = 'None'
+
+        self.CreditCard = self.label_rows(df)
+        self.info_labeled(self.CreditCard)
+
+    def save_data(self, path):
+        self.data.to_csv(path, sep=';', quoting=int(True), encoding='latin-1')
+
+        with open(path, "r") as f:
+            lines = f.readlines()
+
+        with open(path, "w") as f:
+            for line in self.meta_data_lines:
+                f.write(line)
+            for line in lines:
+                f.write(line)
