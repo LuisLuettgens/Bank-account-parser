@@ -161,7 +161,8 @@ def summary(bank_account, start, end, tag):
     axes[2, 0].axhline(0, color='black')
     axes[2, 0].grid(axis='y')
 
-    axes[2, 1].set_visible(False)
+    if bank_account.CreditCard is None:
+        axes[2, 1].set_visible(False)
 
     # Set title
     title = "".join(['Summary for period: ', start.date().strftime('%Y-%m-%d'), ' - ', end.date().strftime('%Y-%m-%d')])

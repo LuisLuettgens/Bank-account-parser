@@ -9,7 +9,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : null
   },
   "Groceries" :
   {
@@ -22,7 +23,9 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["REWE", "EDEKA", "PENNY", "KAUFLAND", "NETTO", "ALECO GMBH", "ALDI",
+                      "Lebensmittel", "LIDL", "E-CENTER", "DM FIL", "ROSSMANN", "MARKT"]
   },
   "Dining" :
   {
@@ -36,7 +39,10 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["RESTAURANT", "IMBISS", "CAFE", "MCDONALDS", "SUBWAY", "BURGER KING", "GASTRO",
+                                      "VAPIANO", "BAE?CK", "LOSTERIA", "COFFEE", "SUSHI", "PIZZA", "MENSACARD",
+                                      "DEAN + DAVID"]
   },
   "Mobil phone / Internet" :
   {
@@ -49,7 +55,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["VODAFONE", "DRILLISCH", "O2", "TELEKOM", "1&1", "CONGSTAR", "MOBILCOM-DEBITEL", "KLARMOBIL"]
   },
     "Travel" :
   {
@@ -62,7 +69,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" :  ["HOTEL", "BAHN AG", "DB AG", "FERNVERKEHR", "MOTEL ONE", "JUGENDHERBERG", "DB VERTRIEB"]
   },
     "Credit card" :
   {
@@ -74,7 +82,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["KREDITKARTENABRECHNUNG", "DKB VISACARD"]
   },
     "Car" :
   {
@@ -86,7 +95,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["AUTO", "SHELL", "TANK", "ESSO", "JET", "AVIA", "TOTAL SERVICE", "AGIP","OIL"]
   },
     "Insurance" :
   {
@@ -98,7 +108,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["VERSICHERUNG", "BUNDESKASSE IN KIEL", "HKK", "BKK"]
   },
     "Culture" :
   {
@@ -110,7 +121,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["SPORTVEREIN", "TURNVEREIN", "ENTERTAIN", "SPORT", "FITNESS", "CLUB", "ZEITUNG"]
   },
   "End of Quater":
   {
@@ -122,7 +134,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["ABSCHLUSS"]
   },
   "Medical":
   {
@@ -134,7 +147,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["APOTHEKE"]
   },
   "Housing":
   {
@@ -146,7 +160,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : null
   },
   "Private":
   {
@@ -158,7 +173,8 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : null
   },
   "None":
   {
@@ -170,19 +186,21 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : null
   },
   "Fashion":
   {
     "Compose" : null,
     "Buchungstext" : null,
     "Auftraggeber / Beguenstigter" : ["TXMAXX", "HILFIGER", "H+M", "ZARA"],
-    "Verwendungszweck" :  null,
-    "Kontonummer" :  null,
-    "BLZ" :  null,
-    "Glaeubiger-ID" :  null,
-    "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Verwendungszweck" : null,
+    "Kontonummer" : null,
+    "BLZ" : null,
+    "Glaeubiger-ID" : null,
+    "Mandatsreferenz" : null,
+    "Kundenreferenz" : null,
+    "Beschreibung" : ["TXMAXX", "HILFIGER", "H+M", "ZARA"]
   },
     "Non-Food":
   {
@@ -194,6 +212,7 @@
     "BLZ" :  null,
     "Glaeubiger-ID" :  null,
     "Mandatsreferenz" :  null,
-    "Kundenreferenz" :  null
+    "Kundenreferenz" :  null,
+    "Beschreibung" : ["AMAZON", "SATURN"]
   }
 }

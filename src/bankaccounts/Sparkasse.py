@@ -22,32 +22,52 @@ class Sparkasse(base.BankAccount):
         register_matplotlib_converters()
         super().__init__(encoding=encoding,
                          keywords_file=keywords_file,
-                         file=self.replace_german_umlauts(file, encoding),
+                         file=replace_german_umlauts(file, encoding),
                          pre_labeled=pre_labeled)
         print('')
 
         self.current_balance = current_balance
 
-        use_cols = ['Auftragskonto', 'Buchungstag', 'Valutadatum', 'Buchungstext', 'Verwendungszweck',
-                    'Glaeubiger ID', 'Mandatsreferenz', 'Kundenreferenz (End-to-End)', 'Sammlerreferenz',
-                    'Lastschrift Ursprungsbetrag', 'Auslagenersatz Ruecklastschrift',
-                    'Beguenstigter/Zahlungspflichtiger', 'Kontonummer/IBAN', 'BIC (SWIFT-Code)', 'Betrag',
-                    'Waehrung', 'Info']
+        self.Sparkasse_header_unlabeled_list = ['Auftragskonto', 'Buchungstag', 'Valutadatum', 'Buchungstext',
+                                                'Verwendungszweck', 'Glaeubiger ID', 'Mandatsreferenz',
+                                                'Kundenreferenz (End-to-End)', 'Sammlerreferenz',
+                                                'Lastschrift Ursprungsbetrag', 'Auslagenersatz Ruecklastschrift',
+                                                'Beguenstigter/Zahlungspflichtiger', 'Kontonummer/IBAN',
+                                                'BIC (SWIFT-Code)', 'Betrag', 'Waehrung', 'Info']
+
+        self.Sparkasse_header_labeled_list = self.Sparkasse_header_unlabeled_list.copy()
+        self.Sparkasse_header_labeled_list.extend(['Balance', 'Transaction Label'])
+
+        self.Sparkasse_header_unlabeled = set(self.Sparkasse_header_unlabeled_list.copy())
+        self.Sparkasse_header_labeled = set(self.Sparkasse_header_labeled_list.copy())
 
         # set type of column 'Betrag' to np. float 
         col_types = {'Betrag': np.float}
 
-        self.data = pd.read_csv(self.file,
-                                delimiter=';',
-                                encoding=self.encoding,
-                                usecols=set(use_cols),
-                                parse_dates=['Buchungstag', 'Valutadatum'],
-                                dtype=col_types,
-                                decimal=',',
-                                thousands='.',
-                                engine='python',
-                                header=0,
-                                names=use_cols)
+        if self.check_trans_n_balance_col():
+            self.data = pd.read_csv(self.file,
+                                    delimiter=';',
+                                    encoding=self.encoding,
+                                    usecols=self.Sparkasse_header_labeled,
+                                    parse_dates=['Buchungstag', 'Valutadatum'],
+                                    dtype=col_types,
+                                    decimal=',',
+                                    thousands='.',
+                                    engine='python',
+                                    header=0,
+                                    names=self.Sparkasse_header_labeled_list)
+        else:
+            self.data = pd.read_csv(self.file,
+                                    delimiter=';',
+                                    encoding=self.encoding,
+                                    usecols=self.Sparkasse_header_unlabeled,
+                                    parse_dates=['Buchungstag', 'Valutadatum'],
+                                    dtype=col_types,
+                                    decimal=',',
+                                    thousands='.',
+                                    engine='python',
+                                    header=0,
+                                    names=self.Sparkasse_header_unlabeled_list)
 
         del self.data['Auftragskonto']
         del self.data['Mandatsreferenz']
@@ -75,10 +95,10 @@ class Sparkasse(base.BankAccount):
         self.daily_data = self.update_daily()
 
         if not self.pre_labeled:
-            self.label_rows()
+            self.data = self.label_rows(self.data)
 
         print('')
-        self.info_labeled()
+        self.info_labeled(self.data)
 
         self.start_date = min(self.data['Wertstellung'])
         self.end_date = max(self.data['Wertstellung'])
