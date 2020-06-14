@@ -4,7 +4,6 @@ import pandas as pd
 import random
 import pytest
 
-wdadwdawd
 def test_is_valid_csv_file(tmp_path):
     
     d = tmp_path / "sub"
